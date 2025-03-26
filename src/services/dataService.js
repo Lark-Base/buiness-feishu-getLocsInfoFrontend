@@ -30,12 +30,37 @@ export const queryExpressInfo = async (trackingNumber, baseId) => {
     const trackingNumberStr = String(trackingNumber).trim();
     
     const response = await api({
-      method: 'get',
-      url: `https://sky-eve-yang.com.cn:5000/query?tracking_number=${trackingNumberStr}&base_id=${baseId}&phone_suffix=&api=`,
-      withCredentials: true
+      method: 'post',
+      url: `/api/query/domestic`,
+      data: {
+        tracking_number: trackingNumberStr,
+        base_id: baseId
+      },
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
 
-    return response.data;
+    // 处理响应数据
+    if (response.data.success) {
+      const data = response.data.data;
+      return {
+        success: true,
+        data: {
+          carrier: data.courier,
+          status_desc: data.latest_event,
+          status: data.status_text,
+          events: data.events.map(event => ({
+            time: event.time,
+            context: event.context,
+            location: event.location
+          }))
+        },
+        remaining: response.data.remaining
+      };
+    } else {
+      throw new Error(response.data.message || '查询失败');
+    }
   } catch (error) {
     console.error('查询快递信息失败:', error);
     if (error.code === 'ERR_NETWORK') {
@@ -54,6 +79,7 @@ export const updateRecordInfo = async ({
   statusField,
   updateTimeField,
   refreshChangeField,
+  allLogisticsInfoField,
   logisticsData,
   prevStatus,
   prevUpdateTime
@@ -72,6 +98,25 @@ export const updateRecordInfo = async ({
   const refreshText = `${logisticsData.data.carrier} 于 ${currentTime} 刷新。新变动 ${hasChange ? '√' : '×'}。${prevUpdateTime ? `上次刷新时间 ${prevUpdateTime}` : ''}`;
   await currentTable.setCellValue(refreshChangeField.id, record.recordId, refreshText);
 
+  // 更新全部物流信息（按时间倒序排列）
+  if (allLogisticsInfoField && logisticsData.data.events && logisticsData.data.events.length > 0) {
+    // 按时间倒序排序物流事件
+    const sortedEvents = [...logisticsData.data.events].sort((a, b) => {
+      // 将时间字符串转换为时间戳进行比较
+      const timeA = new Date(a.time.replace(/-/g, '/'));
+      const timeB = new Date(b.time.replace(/-/g, '/'));
+      return timeB - timeA; // 倒序排列
+    });
+    
+    // 格式化物流信息文本
+    const allLogisticsText = sortedEvents.map(event => {
+      return `【${event.time}】${event.location ? event.location + ' - ' : ''}${event.context}`;
+    }).join('\n\n');
+    
+    // 设置全部物流信息字段
+    await currentTable.setCellValue(allLogisticsInfoField.id, record.recordId, allLogisticsText);
+  }
+
   return {
     currentTime,
     hasChange,
@@ -84,13 +129,36 @@ export const queryRemainingQuota = async (baseId) => {
   try {
     const response = await api({
       method: 'get',
-      url: `https://sky-eve-yang.com.cn:5000/api/auth/total-remaining?base_id=${baseId}`,
+      url: `/api/api/auth/total-remaining?base_id=${baseId}`,
       withCredentials: true
+    });
+
+    return {
+      success: response.data.success,
+      data: {
+        remaining_quota: response.data.data.remaining_quota,
+        domestic_quota: response.data.data.domestic_quota,
+        international_quota: response.data.data.international_quota,
+        base_id: response.data.data.base_id
+      }
+    };
+  } catch (error) {
+    console.error('查询剩余次数失败:', error);
+    throw error;
+  }
+};
+
+// 获取套餐列表
+export const getPackages = async () => {
+  try {
+    const response = await api({
+      method: 'get',
+      url: `/api/api/package/`,
     });
 
     return response.data;
   } catch (error) {
-    console.error('查询剩余次数失败:', error);
+    console.error('获取套餐列表失败:', error);
     throw error;
   }
 };
