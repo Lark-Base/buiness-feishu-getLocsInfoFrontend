@@ -56,7 +56,7 @@
 
     <!-- 主体内容 - 魔法版 -->
     <div class="flex-1 flex justify-center items-center p-2">
-      <div class="relative bg-white/80 backdrop-blur-sm w-full max-w-[420px] min-h-[762px] text-gray-800 shadow-xl !rounded-3xl border border-white/50 overflow-hidden">
+      <div class="relative bg-white/80 backdrop-blur-sm w-full max-w-[420px] min-h-[762px] text-gray-800 shadow-xl !rounded-3xl border border-white/50">
         <!-- 魔法装饰元素 -->
         <div class="absolute -top-20 -right-20 w-40 h-40 bg-gradient-to-br from-primary/10 to-indigo-300/10 rounded-full opacity-60"></div>
         <div class="absolute -bottom-10 -left-10 w-28 h-28 bg-gradient-to-tr from-blue-300/10 to-primary/10 rounded-full opacity-50"></div>
@@ -117,7 +117,8 @@
             </div>
 
             <!-- 查询额度 - 魔法版 -->
-            <div class="pt-4">
+            <!-- 查询额度 - 魔法版 -->
+            <div class="pt-4 mt-3">
               <div class="flex items-center mb-4">
                 <div class="w-1 h-5 bg-gradient-to-b from-primary to-blue-400 !rounded-full mr-2"></div>
                 <h2 class="text-base font-medium bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-transparent">查询余量</h2>
@@ -127,13 +128,13 @@
                 </div>
                 <p class="ml-auto text-xs text-gray-500">仅针对当前多维表格</p>
               </div>
-              
+               
               <div class="grid grid-cols-2 gap-4">
                 <!-- 国内查询卡片 -->
                 <div class="group relative bg-gradient-to-br from-white to-blue-50/30 p-4 !rounded-2xl shadow-md border border-gray-100 hover:border-primary/20 transition-all hover:shadow-lg overflow-hidden">
                   <!-- 装饰效果 -->
                   <div class="absolute -right-2 -top-2 w-16 h-16 bg-gradient-to-br from-primary/5 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  
+                   
                   <!-- 悬浮光效 -->
                   <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-700 pointer-events-none">
                     <!-- 顶部光晕 -->
@@ -143,7 +144,7 @@
                     <!-- 内部光点 -->
                     <div class="absolute top-1/3 right-1/4 w-10 h-10 bg-primary/5 rounded-full blur-xl animate-pulse"></div>
                   </div>
-                  
+                   
                   <div class="relative">
                     <!-- 标题和数值 - 垂直布局改进版 -->
                     <div class="mb-3">
@@ -160,58 +161,69 @@
                           <span class="text-xs text-primary font-medium">详情</span>
                         </button>
                       </div>
-                      
+                       
                       <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
                           <div class="text-primary font-semibold text-xl">{{ formatNumber(domesticQuota) }}</div>
                           <div class="text-xs text-gray-500 bg-gray-50 px-2 py-0.5 !rounded-full">可用次数</div>
                         </div>
                       </div>
-                      
+                       
                       <!-- 详细信息弹出框 -->
                       <div v-if="showDomesticQuotaInfo" 
-                           class="mt-2 p-2 bg-white border border-primary/10 !rounded-lg shadow-lg">
-                        <div class="text-xs text-gray-500 mb-1">精确余量</div>
-                        <div class="flex items-center justify-between">
-                          <div class="font-bold text-primary text-base">{{ domesticQuota }} 次</div>
-                          <button @click="copyToClipboard(domesticQuota, 'domestic')" 
-                                  class="h-6 w-6 bg-primary/5 !rounded-full flex items-center justify-center hover:bg-primary/10 transition-colors">
-                            <i class="fas fa-copy text-primary text-[8px]"></i>
-                          </button>
+                           class="fixed inset-0 bg-white z-50 flex items-center justify-center p-4"
+                           @click.self="showDomesticQuotaInfo = false">
+                        <div class="w-full h-full flex flex-col">
+                          <div class="flex justify-between items-center p-4 border-b">
+                            <h3 class="text-base font-medium">国内查询余量详情</h3>
+                            <button @click="showDomesticQuotaInfo = false" class="text-gray-400 hover:text-gray-600">
+                              <i class="fas fa-times"></i>
+                            </button>
+                          </div>
+                          <div class="flex-1 flex flex-col items-center justify-center p-4 space-y-4">
+                            <div class="text-xs text-gray-500">精确余量</div>
+                            <div class="flex items-center justify-between">
+                              <div class="font-bold text-primary text-2xl">{{ domesticQuota }} 次</div>
+                              <button @click="copyToClipboard(domesticQuota, 'domestic')" 
+                                      class="h-8 w-8 bg-primary/5 !rounded-full flex items-center justify-center hover:bg-primary/10 transition-colors">
+                                <i class="fas fa-copy text-primary text-sm"></i>
+                              </button>
+                            </div>
+                            <div v-if="copiedType === 'domestic'" class="text-sm text-green-500">已复制!</div>
+                          </div>
                         </div>
-                        <div v-if="copiedType === 'domestic'" class="text-[10px] text-green-500 mt-0.5">已复制!</div>
                       </div>
+                       
+                      <!-- 增强进度条 -->
+                      <div class="relative w-full bg-gray-100 !rounded-full h-2 mb-3 overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-primary to-blue-500 !rounded-full shadow-sm transition-all duration-500 ease-out" 
+                             :style="{ width: `${Math.min((domesticQuota / domesticPurchased) * 100, 100)}%` }"></div>
+                        <!-- 进度条上的闪光效果 -->
+                        <div class="absolute inset-0 w-full h-full opacity-30 bg-gradient-to-r from-transparent via-white to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
+                      </div>
+                       
+                      <!-- 余额不足提示 -->
+                      <div v-if="domesticQuota < 100" 
+                           class="mb-2 flex items-center gap-1.5 text-xs text-red-500 bg-red-50/70 px-2 py-1 !rounded-lg border border-red-100/50">
+                        <i class="fas fa-exclamation-circle text-[10px]"></i>
+                        <span>余额不足，请及时充值</span>
+                      </div>
+                       
+                      <!-- 改进的充值按钮 -->
+                      <button @click="togglePaymentModal" 
+                              class="w-full h-8 bg-gradient-to-r from-primary to-blue-600 text-white text-xs font-medium !rounded-lg flex items-center justify-center shadow-sm hover:shadow group-hover:scale-[1.01] transition-all">
+                        <i class="fas fa-wallet text-xs mr-1.5"></i>
+                        <span>立即充值</span>
+                      </button>
                     </div>
-                    
-                    <!-- 增强进度条 -->
-                    <div class="relative w-full bg-gray-100 !rounded-full h-2 mb-3 overflow-hidden">
-                      <div class="h-full bg-gradient-to-r from-primary to-blue-500 !rounded-full shadow-sm transition-all duration-500 ease-out" 
-                           :style="{ width: `${Math.min((domesticQuota / 5000) * 100, 100)}%` }"></div>
-                      <!-- 进度条上的闪光效果 -->
-                      <div class="absolute inset-0 w-full h-full opacity-30 bg-gradient-to-r from-transparent via-white to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
-                    </div>
-                    
-                    <!-- 余额不足提示 -->
-                    <div v-if="domesticQuota < 100" 
-                         class="mb-2 flex items-center gap-1.5 text-xs text-red-500 bg-red-50/70 px-2 py-1 !rounded-lg border border-red-100/50">
-                      <i class="fas fa-exclamation-circle text-[10px]"></i>
-                      <span>余额不足，请及时充值</span>
-                    </div>
-                    
-                    <!-- 改进的充值按钮 -->
-                    <button @click="togglePaymentModal" 
-                            class="w-full h-8 bg-gradient-to-r from-primary to-blue-600 text-white text-xs font-medium !rounded-lg flex items-center justify-center shadow-sm hover:shadow group-hover:scale-[1.01] transition-all">
-                      <i class="fas fa-wallet text-xs mr-1.5"></i>
-                      <span>立即充值</span>
-                    </button>
                   </div>
                 </div>
-                
+                 
                 <!-- 国际查询卡片 - 增加光效 -->
                 <div class="group relative bg-gradient-to-br from-white to-indigo-50/20 p-4 !rounded-2xl shadow-md border border-gray-100 hover:border-indigo-200/50 transition-all hover:shadow-lg overflow-hidden">
                   <!-- 装饰效果 -->
                   <div class="absolute -right-2 -top-2 w-16 h-16 bg-gradient-to-br from-indigo-400/5 to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-                  
+                   
                   <!-- 悬浮光效 -->
                   <div class="absolute inset-0 opacity-0 group-hover:opacity-100 transition-all duration-700 pointer-events-none">
                     <!-- 顶部光晕 -->
@@ -221,7 +233,7 @@
                     <!-- 内部光点 -->
                     <div class="absolute top-1/3 right-1/4 w-10 h-10 bg-indigo-400/5 rounded-full blur-xl animate-pulse"></div>
                   </div>
-                  
+                   
                   <div class="relative">
                     <!-- 标题和数值 - 垂直布局改进版 -->
                     <div class="mb-3">
@@ -238,86 +250,65 @@
                           <span class="text-xs text-indigo-500 font-medium">详情</span>
                         </button>
                       </div>
-                      
+                       
                       <div class="flex items-center justify-between">
                         <div class="flex items-center gap-2">
                           <div class="text-indigo-500 font-semibold text-xl">{{ formatNumber(internationalQuota) }}</div>
                           <div class="text-xs text-gray-500 bg-gray-50 px-2 py-0.5 !rounded-full">可用次数</div>
                         </div>
                       </div>
-                      
+                       
                       <!-- 详细信息弹出框 -->
                       <div v-if="showInternationalQuotaInfo" 
-                           class="mt-2 p-2 bg-white border border-indigo-200/50 !rounded-lg shadow-lg">
-                        <div class="text-xs text-gray-500 mb-1">精确余量</div>
-                        <div class="flex items-center justify-between">
-                          <div class="font-bold text-indigo-500 text-base">{{ internationalQuota }} 次</div>
-                          <button @click="copyToClipboard(internationalQuota, 'international')" 
-                                  class="h-6 w-6 bg-indigo-50 !rounded-full flex items-center justify-center hover:bg-indigo-100 transition-colors">
-                            <i class="fas fa-copy text-indigo-500 text-[8px]"></i>
-                          </button>
+                           class="fixed inset-0 bg-white z-50 flex items-center justify-center p-4"
+                           @click.self="showInternationalQuotaInfo = false">
+                        <div class="w-full h-full flex flex-col">
+                          <div class="flex justify-between items-center p-4 border-b">
+                            <h3 class="text-base font-medium">国际查询余量详情</h3>
+                            <button @click="showInternationalQuotaInfo = false" class="text-gray-400 hover:text-gray-600">
+                              <i class="fas fa-times"></i>
+                            </button>
+                          </div>
+                          <div class="flex-1 flex flex-col items-center justify-center p-4 space-y-4">
+                            <div class="text-xs text-gray-500">精确余量</div>
+                            <div class="flex items-center justify-between">
+                              <div class="font-bold text-indigo-500 text-2xl">{{ internationalQuota }} 次</div>
+                              <button @click="copyToClipboard(internationalQuota, 'international')" 
+                                      class="h-8 w-8 bg-indigo-50 !rounded-full flex items-center justify-center hover:bg-indigo-100 transition-colors">
+                                <i class="fas fa-copy text-indigo-500 text-sm"></i>
+                              </button>
+                            </div>
+                            <div v-if="copiedType === 'international'" class="text-sm text-green-500">已复制!</div>
+                          </div>
                         </div>
-                        <div v-if="copiedType === 'international'" class="text-[10px] text-green-500 mt-0.5">已复制!</div>
                       </div>
-                    </div>
-                    
-                    <!-- 增强进度条 -->
-                    <div class="relative w-full bg-gray-100 !rounded-full h-2 mb-3 overflow-hidden">
-                      <div class="h-full bg-gradient-to-r from-indigo-500 to-blue-400 !rounded-full shadow-sm transition-all duration-500 ease-out" 
-                           :style="{ width: `${Math.min((internationalQuota / 5000) * 100, 100)}%` }"></div>
-                      <!-- 进度条上的闪光效果 -->
-                      <div class="absolute inset-0 w-full h-full opacity-30 bg-gradient-to-r from-transparent via-white to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
-                    </div>
-                    
-                    <!-- 余额不足提示 -->
-                    <div v-if="internationalQuota < 100" 
-                         class="mb-2 flex items-center gap-1.5 text-xs text-red-500 bg-red-50/70 px-2 py-1 !rounded-lg border border-red-100/50">
-                      <i class="fas fa-exclamation-circle text-[10px]"></i>
-                      <span>余额不足，请及时充值</span>
-                    </div>
-                    
-                    <!-- 即将上线提示 -->
-                    <div class="flex items-center justify-center gap-1.5 bg-indigo-50/80 py-1.5 !rounded-lg border border-indigo-100/50">
-                      <div class="relative w-2 h-2">
-                        <div class="absolute inset-0 bg-indigo-400/50 !rounded-full animate-ping"></div>
-                        <div class="absolute inset-0 bg-indigo-500 !rounded-full"></div>
+                       
+                      <!-- 增强进度条 -->
+                      <div class="relative w-full bg-gray-100 !rounded-full h-2 mb-3 overflow-hidden">
+                        <div class="h-full bg-gradient-to-r from-indigo-500 to-blue-400 !rounded-full shadow-sm transition-all duration-500 ease-out" 
+                             :style="{ width: `${Math.min((internationalQuota / internationalPurchased) * 100, 100)}%` }"></div>
+                        <!-- 进度条上的闪光效果 -->
+                        <div class="absolute inset-0 w-full h-full opacity-30 bg-gradient-to-r from-transparent via-white to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out"></div>
                       </div>
-                      <span class="text-xs font-medium text-indigo-600">国际查询功能即将上线</span>
+                       
+                      <!-- 余额不足提示 -->
+                      <div v-if="internationalQuota < 100" 
+                           class="mb-2 flex items-center gap-1.5 text-xs text-red-500 bg-red-50/70 px-2 py-1 !rounded-lg border border-red-100/50">
+                        <i class="fas fa-exclamation-circle text-[10px]"></i>
+                        <span>余额不足，请及时充值</span>
+                      </div>
+                       
+                      <!-- 即将上线提示 -->
+                      <div class="flex items-center justify-center gap-1.5 bg-indigo-50/80 py-1.5 !rounded-lg border border-indigo-100/50">
+                        <span class="text-xs font-medium text-indigo-600">国际查询功能即将上线</span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <!-- 错误提示 -->
-            <div v-if="errorMessage && hasError" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 !rounded-lg mb-4">
-              <div class="flex">
-                <div class="flex-shrink-0">
-                  <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
-                  </svg>
-                </div>
-                <div class="ml-3">
-                  <p class="text-sm whitespace-pre-line">{{ errorMessage }}</p>
-                </div>
-              </div>
-            </div>
 
-            <!-- 成功提示 -->
-            <div v-if="successMessage" class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 !rounded-lg mb-4">
-              <div class="flex">
-                <div class="flex-shrink-0">
-                  <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-                  </svg>
-                </div>
-                <div class="ml-3">
-                  <p class="text-sm whitespace-pre-line">{{ successMessage }}</p>
-                </div>
-              </div>
-            </div>
-
-            <!-- 字段选择 - 魔法版 -->
             <div class="pt-4">
               <div class="flex items-center mb-4">
                 <div class="w-1 h-5 bg-gradient-to-b from-primary to-blue-400 !rounded-full mr-2"></div>
@@ -370,7 +361,7 @@
                 
                 <!-- 字段选择下拉框 -->
                 <div v-if="showFieldSelector" 
-                     class="absolute z-10 w-full mt-2 bg-white/95 backdrop-blur-sm border border-primary/10 !rounded-xl shadow-xl max-h-60 overflow-y-auto">
+                     class="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-sm border border-primary/10 !rounded-xl shadow-xl max-h-60 overflow-y-auto">
                   <!-- 字段列表 -->
                   <div class="p-2">
                     <div v-for="field in tableFields" 
@@ -402,6 +393,144 @@
                          class="fas fa-check text-primary"></i>
                     </div>
                   </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- 中文字符警告提示 -->
+            <div v-if="chineseWarningMessage" class="mt-2 p-2 bg-amber-50 !rounded-lg border border-amber-100 text-amber-700 text-xs">
+              <div class="flex items-start gap-2">
+                <i class="fas fa-exclamation-triangle text-amber-500 mt-0.5"></i>
+                <span>{{ chineseWarningMessage }}</span>
+              </div>
+            </div>
+
+            <!-- 手机号码字段选择 -->
+            <div class="pt-4 mt-3">
+              <div class="flex items-center mb-4">
+                <div class="w-1 h-5 bg-gradient-to-b from-primary to-blue-400 !rounded-full mr-2"></div>
+                <h2 class="text-base font-medium bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-transparent">选择四位手机号码字段</h2>
+                <div class="ml-2">
+                  <div class="text-xs text-gray-500 bg-gray-50 px-2 py-0.5 !rounded-full border border-gray-100">
+                    <span>非必选</span>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="relative">
+                <!-- 手机号码选择器按钮 -->
+                <button @click="showMobileFieldSelector = !showMobileFieldSelector" 
+                        :class="[
+                          'group/mobile-selector w-full h-12 px-4 bg-white/90 shadow-sm border !rounded-xl flex items-center justify-between transition-all hover:shadow',
+                          selectedMobileField 
+                            ? 'border-primary/30 bg-blue-50/30' 
+                            : 'border-gray-200 hover:border-gray-300'
+                        ]">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 bg-primary/5 !rounded-lg flex items-center justify-center">
+                      <i class="fas fa-mobile-alt text-primary group-hover/mobile-selector:scale-110 transition-transform"></i>
+                    </div>
+                    <div class="flex flex-col">
+                      <span class="text-gray-700 text-sm font-medium truncate">
+                        {{ selectedMobileField ? selectedMobileField.name : '请选择手机号码字段（可选）' }}
+                      </span>
+                      <span v-if="selectedMobileField" class="text-xs text-gray-500">已选择手机号码字段</span>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <div class="w-6 h-6 flex items-center justify-center">
+                      <i :class="[
+                        'fas transition-transform duration-300', 
+                        showMobileFieldSelector ? 'fa-chevron-up text-primary' : 'fa-chevron-down text-gray-400 group-hover/mobile-selector:text-primary'
+                      ]"></i>
+                    </div>
+                  </div>
+                </button>
+                
+                <!-- 手机号码字段选择下拉框 -->
+                <div v-if="showMobileFieldSelector" 
+                     class="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-sm border border-primary/10 !rounded-xl shadow-xl max-h-60 overflow-y-auto">
+                  <!-- 字段列表 -->
+                  <div class="p-2">
+                    <!-- 空选项 -->
+                    <div @click="selectMobileField(null)" 
+                         class="group/field px-3 py-2.5 cursor-pointer flex items-center justify-between transition-all !rounded-lg hover:bg-gray-50">
+                      <div class="flex items-center gap-3">
+                        <div class="w-7 h-7 !rounded-lg flex items-center justify-center transition-colors bg-gray-100 group-hover/field:bg-gray-200/80">
+                          <i class="fas fa-times text-sm text-gray-500"></i>
+                        </div>
+                        <span class="text-sm font-medium truncate text-gray-700 group-hover/field:text-gray-900">不选择</span>
+                      </div>
+                      <i v-if="!selectedMobileField" class="fas fa-check text-primary"></i>
+                    </div>
+                    
+                    <!-- 手机号码字段列表 -->
+                    <div v-for="field in mobileFieldOptions" 
+                         :key="field.id" 
+                         @click="selectMobileField(field)"
+                         class="group/field px-3 py-2.5 cursor-pointer flex items-center justify-between transition-all !rounded-lg hover:bg-gray-50">
+                      <div class="flex items-center gap-3">
+                        <div :class="[
+                          'w-7 h-7 !rounded-lg flex items-center justify-center transition-colors',
+                          selectedMobileField && selectedMobileField.id === field.id
+                            ? 'bg-primary/10'
+                            : 'bg-gray-100 group-hover/field:bg-gray-200/80'
+                        ]">
+                          <i :class="[
+                            getFieldIcon(field.type),
+                            selectedMobileField && selectedMobileField.id === field.id
+                              ? 'text-primary'
+                              : 'text-gray-500'
+                          ]"></i>
+                        </div>
+                        <span :class="[
+                          'text-sm font-medium truncate',
+                          selectedMobileField && selectedMobileField.id === field.id
+                            ? 'text-primary'
+                            : 'text-gray-700 group-hover/field:text-gray-900'
+                        ]">{{ field.name }}</span>
+                      </div>
+                      <i v-if="selectedMobileField && selectedMobileField.id === field.id" 
+                         class="fas fa-check text-primary"></i>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div v-if="mobileValidationMessage" class="mt-2 p-2 bg-amber-50 !rounded-lg border border-amber-100 text-amber-700 text-xs">
+                <div class="flex items-start gap-2">
+                  <i class="fas fa-info-circle text-amber-500 mt-0.5"></i>
+                  <span>{{ mobileValidationMessage }}</span>
+                </div>
+              </div>
+            </div>
+
+            
+
+            <!-- 错误提示 -->
+            <div v-if="errorMessage && hasError" class="mt-3 bg-red-50 border border-red-200 text-red-700 px-4 py-3 !rounded-lg">
+              <div class="flex">
+                <div class="flex-shrink-0">
+                  <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                  </svg>
+                </div>
+                <div class="ml-3">
+                  <p class="text-sm whitespace-pre-line">{{ errorMessage }}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 成功提示 -->
+            <div v-if="successMessage" class="mt-3 bg-green-50 border border-green-200 text-green-700 px-4 py-3 !rounded-lg">
+              <div class="flex">
+                <div class="flex-shrink-0">
+                  <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                  </svg>
+                </div>
+                <div class="ml-3">
+                  <p class="text-sm whitespace-pre-line">{{ successMessage }}</p>
                 </div>
               </div>
             </div>
@@ -602,56 +731,49 @@
             <div v-else class="grid grid-cols-2 gap-3">
               <div v-for="pkg in internationalPackages" 
                    :key="pkg.id"
-                   :class="[
-                     'p-3 !rounded-xl border transition-all cursor-pointer relative group',
-                     pkg.popular 
-                       ? 'bg-gradient-to-r from-indigo-50/50 to-blue-50/50 border-indigo-200/50 hover:shadow-md hover:border-indigo-300/50' 
-                       : 'bg-white border-gray-100 hover:shadow hover:border-indigo-200/30'
-                   ]"
-                   @click="handlePayment(pkg.id)">
+                   class="p-3 !rounded-xl border border-gray-100 bg-gray-50/80 relative group cursor-not-allowed">
                 <!-- 标签 -->
                 <div v-if="pkg.tag" 
-                     :class="[
-                       'absolute -top-2 right-3 px-2 py-0.5 text-xs font-medium !rounded-full shadow-sm',
-                       pkg.popular 
-                         ? 'bg-indigo-600 text-white' 
-                         : 'bg-indigo-100 text-indigo-600'
-                     ]">
+                     class="absolute -top-2 right-3 px-2 py-0.5 text-xs font-medium !rounded-full shadow-sm bg-gray-200 text-gray-600">
                   {{ pkg.tag }}
                 </div>
                 
                 <!-- 套餐内容 -->
                 <div class="flex items-center justify-between mb-2">
                   <div class="flex items-center gap-2">
-                    <div :class="[
-                      'w-7 h-7 shrink-0 rounded-lg flex items-center justify-center',
-                      pkg.popular ? 'bg-primary/10' : 'bg-gray-50'
-                    ]">
-                      <i class="fas fa-box text-primary text-[10px]"></i>
+                    <div class="w-7 h-7 shrink-0 rounded-lg flex items-center justify-center bg-gray-100">
+                      <i class="fas fa-box text-gray-400 text-[10px]"></i>
                     </div>
                     <div class="min-w-0 flex-1">
-                      <span class="font-medium text-xs line-clamp-1">{{ pkg.name }}</span>
-                      <p class="text-xs text-gray-500 mt-0.5 line-clamp-1">{{ pkg.description }}</p>
+                      <span class="font-medium text-xs line-clamp-1 text-gray-400">{{ pkg.name }}</span>
+                      <p class="text-xs text-gray-400 mt-0.5 line-clamp-1">{{ pkg.description }}</p>
                     </div>
                   </div>
                   <div class="text-right flex flex-col items-end ml-1">
                     <div class="flex items-baseline gap-0.5">
-                      <span class="text-xs text-gray-500">¥</span>
-                      <span class="text-sm font-medium text-primary">{{ pkg.price }}</span>
+                      <span class="text-xs text-gray-400">¥</span>
+                      <span class="text-sm font-medium text-gray-400">{{ pkg.price }}</span>
                     </div>
-                    <p class="text-xs text-gray-500 whitespace-nowrap">{{ formatNumber(pkg.quota) }}次</p>
+                    <p class="text-xs text-gray-400 whitespace-nowrap">{{ formatNumber(pkg.quota) }}次</p>
                   </div>
                 </div>
                 
                 <!-- 价格对比 -->
                 <div class="flex items-center justify-between text-xs">
-                  <div class="flex items-center gap-1 text-gray-500 truncate">
+                  <div class="flex items-center gap-1 text-gray-400 truncate">
                     <i class="fas fa-calculator text-[10px]"></i>
                     <span class="text-[10px]">约{{ formatUnitPrice(pkg.price, pkg.quota) }}元/千次</span>
                   </div>
-                  <div class="text-indigo-600 group-hover:translate-x-1 transition-transform duration-300">
+                  <div class="text-gray-400">
                     <i class="fas fa-chevron-right text-[10px]"></i>
                   </div>
+                </div>
+
+                <!-- 禁用遮罩 -->
+                <div class="absolute inset-0 bg-gray-100/50 !rounded-xl flex items-center justify-center">
+                  <span class="text-xs text-gray-500 bg-white/80 px-2 py-1 !rounded-full border border-gray-200">
+                    即将上线
+                  </span>
                 </div>
               </div>
             </div>
@@ -778,6 +900,36 @@
         <p class="text-sm text-gray-500 mt-4">正在查询中...</p>
       </div>
     </div>
+
+    <!-- 自定义确认对话框 -->
+    <div v-if="showChineseConfirmDialog" 
+         class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+         @click.self="toggleChineseConfirmDialog">
+      <div class="bg-white !rounded-xl w-full max-w-md p-6 space-y-6">
+        <div class="flex justify-between items-center">
+          <h3 class="font-medium text-lg flex items-center gap-2">
+            <i class="fas fa-exclamation-triangle text-amber-500"></i>
+            <span>检测到快递单号中包含中文字符</span>
+          </h3>
+          <button @click="toggleChineseConfirmDialog" class="text-gray-400 hover:text-gray-600 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-100 transition-colors">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="text-center space-y-3">
+          <p class="text-gray-600">检测到快递单号中包含中文字符，可能会影响查询准确性。是否继续查询？</p>
+        </div>
+        <div class="flex gap-2">
+          <button @click="confirmDialogCallback(true)" 
+                  class="flex-1 h-10 bg-primary text-white !rounded-lg hover:bg-primary/90 transition-colors">
+            继续查询
+          </button>
+          <button @click="confirmDialogCallback(false)" 
+                  class="flex-1 h-10 border border-gray-200 !rounded-lg text-gray-600 hover:bg-gray-50 transition-colors">
+            取消查询
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -822,16 +974,23 @@ const STORAGE_KEY = {
 
 // 添加字段名常量
 const FIELD_NAMES = {
-  LATEST_STATUS: '最新状态',
-  LATEST_UPDATE_TIME: '最新更新时间',
+  LATEST_STATUS: '物流状态',
+  LATEST_UPDATE_TIME: '查询时间',
   REFRESH_CHANGE: '刷新变动',
-  ALL_LOGISTICS_INFO: '全部物流信息'
+  ALL_LOGISTICS_INFO: '全部物流信息',
+  COURIER: '快递公司',
+  LATEST_EVENT: '最新物流动态',
+  LATEST_EVENT_TIME: '最新动态时间',
+  CONTACT_INFO: '快递员信息',
+  DELIVERY_TIMELINE: '运送时长',
+  ERROR_MESSAGE: '报错信息'
 };
 
 // 初始化函数
 const initPluginData = async () => {
   try {
     await getTableFields();
+    await getMobileFieldOptions(); // 添加获取手机号码字段
     await initLoadingChart();
     
     // 获取当前多维表格ID并查询剩余次数
@@ -844,6 +1003,9 @@ const initPluginData = async () => {
     
     // 获取套餐列表
     await loadPackages();
+    
+    // 恢复已保存的字段
+    await restoreMobileField();
   } catch (error) {
     console.error('初始化失败:', error);
     errorMessage.value = '初始化失败，请刷新页面重试';
@@ -859,7 +1021,7 @@ const loadPackages = async () => {
       // 处理套餐数据
       packages.value = response.data.map(pkg => {
         // 标记热门套餐（中间套餐为热门）
-        const popular = pkg.quota === 1000 || pkg.name.includes('套餐2');
+        const popular = pkg.quota === 10000 || pkg.name.includes('套餐2');
         // 为套餐添加标签
         let tag = '';
         if (pkg.description && pkg.description.includes('限购一次')) {
@@ -868,6 +1030,8 @@ const loadPackages = async () => {
           tag = '热销';
         } else if (pkg.quota >= 10000) {
           tag = '最优惠';
+        } else if (pkg.quota < 10000) {
+          tag = '入门款';
         }
         
         return {
@@ -903,41 +1067,7 @@ const loadPackages = async () => {
 
 // 使用默认套餐配置
 const useDefaultPackages = () => {
-  packages.value = [
-    { 
-      id: 1, 
-      name: '体验包', 
-      quota: 100, 
-      price: 1.99,
-      description: '新用户专享',
-      tag: '仅可购买一次',
-      popular: false,
-      type: 0,
-      type_text: '国内套餐'
-    },
-    { 
-      id: 2, 
-      name: '基础包', 
-      quota: 1000, 
-      price: 5.9,
-      description: '最具性价比',
-      tag: '热销',
-      popular: true,
-      type: 0,
-      type_text: '国内套餐'
-    },
-    { 
-      id: 3, 
-      name: '超值包', 
-      quota: 10000, 
-      price: 49.9,
-      description: '企业首选',
-      tag: '最优惠',
-      popular: false,
-      type: 0,
-      type_text: '国内套餐'
-    }
-  ];
+  packages.value = [];
 };
 
 // 根据类型过滤套餐
@@ -1013,6 +1143,7 @@ const loadViewRecords = async (table, view) => {
   try {
     isLoading.value = true;
     errorMessage.value = '';
+    chineseWarningMessage.value = ''; // 清除之前的中文警告
     
     console.log('开始获取记录...');
     // 获取当前视图的记录
@@ -1031,9 +1162,14 @@ const loadViewRecords = async (table, view) => {
     const fieldValues = await Promise.all(
       records.map(async (recordId) => {
         try {
+          let textValue = ""
           const value = await table.getCellValue(selectedField.value.id, recordId);
-          console.log('单个记录的原始值:', value);
-          const textValue = value ? String(value) : '';
+          if (Array.isArray(value)) {
+            textValue += value.map(item => item.text).join('');
+          } else if (typeof value === 'string') {
+            textValue += value;
+          }
+          
           console.log(`记录 ${recordId} 的最终值:`, textValue);
           return {
             recordId: recordId,
@@ -1051,15 +1187,37 @@ const loadViewRecords = async (table, view) => {
     
     console.log('获取到的所有字段值:', fieldValues);
     
+    // 检查是否包含中文字符
+    let containsChinese = false;
+    let chineseRecords = [];
+    
     // 过滤掉空值，同时添加错误处理
     viewRecords.value = fieldValues.filter(item => {
       try {
-        return item.value && item.value.trim() !== '';
+        if (!item.value || item.value.trim() === '') return false;
+        
+        // 检查是否包含中文字符
+        if (/[\u4e00-\u9fa5]/.test(item.value)) {
+          containsChinese = true;
+          chineseRecords.push(item.value);
+          return true; // 仍然保留这条记录，但会显示警告
+        }
+        
+        return true;
       } catch (err) {
         console.error('过滤记录失败:', err);
         return false;
       }
     });
+    
+    // 如果存在中文字符，显示警告
+    if (containsChinese) {
+      const maxSamples = 3; // 最多显示3个含中文的样本
+      const samples = chineseRecords.slice(0, maxSamples).map(sample => `"${sample}"`).join('、');
+      const remaining = chineseRecords.length > maxSamples ? `等${chineseRecords.length}条记录` : '';
+      
+      chineseWarningMessage.value = `检测到${chineseRecords.length}条记录中包含中文字符，可能会影响查询准确性：${samples}${remaining}。建议移除中文后再查询。`;
+    }
     
     console.log('过滤后的有效记录:', viewRecords.value);
     console.log('有效记录数量:', viewRecords.value.length);
@@ -1107,9 +1265,57 @@ const ensureRequiredFields = async (table) => {
     const field = fields.find(f => f.name === fieldName);
     if (!field) {
       // 如果字段不存在，创建它
+      // 对于特定字段使用特定类型
+      let fieldType = FieldType.Text;
+      let fieldProperty = {};
+      
+      // 单选字段类型
+      if (fieldName === FIELD_NAMES.COURIER || 
+          fieldName === FIELD_NAMES.LATEST_STATUS) {
+        fieldType = FieldType.SingleSelect;
+        
+        // 预设选项
+        if (fieldName === FIELD_NAMES.COURIER) {
+          fieldProperty = {
+            options: [
+              { name: '顺丰速运' },
+              { name: '中通快递' },
+              { name: '圆通速递' },
+              { name: '韵达快递' },
+              { name: '申通快递' },
+              { name: '百世快递' },
+              { name: '邮政快递' },
+              { name: 'EMS' },
+              { name: '京东物流' },
+              { name: '德邦快递' }
+            ]
+          };
+        } else if (fieldName === FIELD_NAMES.LATEST_STATUS) {
+          fieldProperty = {
+            options: [
+              { name: '已签收' },
+              { name: '运输中' },
+              { name: '已揽收' },
+              { name: '派送中' },
+              { name: '已发货' },
+              { name: '待取件' },
+              { name: '已退回' },
+              { name: '疑难件' }
+            ]
+          };
+        }
+      }
+      
+      // 日期时间类型的字段
+      else if (fieldName === FIELD_NAMES.LATEST_EVENT_TIME || 
+          fieldName === FIELD_NAMES.LATEST_UPDATE_TIME) {
+        fieldType = FieldType.DateTime;
+      }
+      
       await table.addField({
-        type: FieldType.Text,
-        name: fieldName
+        type: fieldType,
+        name: fieldName,
+        property: fieldProperty
       });
       console.log(`创建字段: ${fieldName}`);
     }
@@ -1195,6 +1401,31 @@ const batchQuery = async () => {
     return;
   }
 
+  // 如果存在中文字符，显示自定义确认对话框而不是使用 confirm
+  if (chineseWarningMessage.value) {
+    // 使用 Promise 和自定义对话框来代替 confirm
+    return new Promise((resolve) => {
+      showChineseConfirmDialog.value = true;
+      confirmDialogCallback.value = (confirmed) => {
+        showChineseConfirmDialog.value = false;
+        if (confirmed) {
+          // 用户确认继续，执行查询逻辑
+          resolve();
+          executeBatchQuery();
+        } else {
+          // 用户取消，不执行查询
+          resolve();
+        }
+      };
+    });
+  } else {
+    // 没有中文字符，直接执行查询
+    await executeBatchQuery();
+  }
+};
+
+// 抽取查询执行逻辑到单独的方法
+const executeBatchQuery = async () => {
   try {
     isLoading.value = true;
     errorMessage.value = '';
@@ -1220,6 +1451,12 @@ const batchQuery = async () => {
     const updateTimeField = fields.find(f => f.name === FIELD_NAMES.LATEST_UPDATE_TIME);
     const refreshChangeField = fields.find(f => f.name === FIELD_NAMES.REFRESH_CHANGE);
     const allLogisticsInfoField = fields.find(f => f.name === FIELD_NAMES.ALL_LOGISTICS_INFO);
+    const courierField = fields.find(f => f.name === FIELD_NAMES.COURIER);
+    const latestEventField = fields.find(f => f.name === FIELD_NAMES.LATEST_EVENT);
+    const latestEventTimeField = fields.find(f => f.name === FIELD_NAMES.LATEST_EVENT_TIME);
+    const contactInfoField = fields.find(f => f.name === FIELD_NAMES.CONTACT_INFO);
+    const deliveryTimelineField = fields.find(f => f.name === FIELD_NAMES.DELIVERY_TIMELINE);
+    const errorMessageField = fields.find(f => f.name === FIELD_NAMES.ERROR_MESSAGE);
 
     let successCount = 0;
     let failCount = 0;
@@ -1227,19 +1464,48 @@ const batchQuery = async () => {
 
     for (const record of viewRecords.value) {
       let trackingNumber = '';
+      let mobileNumber = null;
+      let recordErrorMessage = ''; // 存储当前记录的错误信息
+      
       try {
-        const trackingNumberData = await currentTable.getCellValue(selectedField.value.id, record.recordId);
+        // 先清空该记录的错误信息
+        if (errorMessageField) {
+          await currentTable.setCellValue(errorMessageField.id, record.recordId, '');
+        }
         
+        // 获取快递单号
+        const trackingNumberData = await currentTable.getCellValue(selectedField.value.id, record.recordId);
         if (Array.isArray(trackingNumberData)) {
           trackingNumber = trackingNumberData.map(item => item.text).join('');
         } else if (typeof trackingNumberData === 'string') {
           trackingNumber = trackingNumberData;
         }
         
+        // 获取手机号码
+        if (selectedMobileField.value) {
+          const mobileData = await currentTable.getCellValue(selectedMobileField.value.id, record.recordId);
+          let mobileStr = '';
+          
+          if (Array.isArray(mobileData)) {
+            mobileStr = mobileData.map(item => item.text || item).join('');
+          } else if (mobileData !== null && mobileData !== undefined) {
+            mobileStr = String(mobileData);
+          }
+          
+          // 验证手机号码
+          mobileNumber = validateMobileNumber(mobileStr);
+          
+          // 如果有记录但验证失败，只在第一次显示警告
+          if (mobileStr && !mobileNumber && failCount === 0 && successCount === 0) {
+            console.warn('手机号码格式不正确, 将不使用手机号码进行查询:', mobileStr);
+          }
+        }
+        
         const prevStatus = await currentTable.getCellValue(statusField.id, record.recordId);
         const prevUpdateTime = await currentTable.getCellValue(updateTimeField.id, record.recordId);
         
-        const logisticsData = await queryExpressInfo(trackingNumber, baseId);
+        // 使用带手机号码的查询
+        const logisticsData = await queryExpressInfo(trackingNumber, baseId, mobileNumber);
         
         if (logisticsData.success) {
           await updateRecordInfo({
@@ -1251,12 +1517,35 @@ const batchQuery = async () => {
             allLogisticsInfoField,
             logisticsData,
             prevStatus,
-            prevUpdateTime
+            prevUpdateTime,
+            courierField,
+            latestEventField,
+            latestEventTimeField,
+            contactInfoField,
+            deliveryTimelineField,
+            errorMessageField
           });
           successCount++;
         } else {
           failCount++;
-          errorDetails.push(`快递单号 ${trackingNumber} 查询失败: ${logisticsData.message || '未知错误'}`);
+          // 从响应中获取错误信息
+          let errorMsg = logisticsData.message || '未知错误';
+          
+          // 优化针对特定情况的错误信息
+          if (errorMsg.includes("物流状态未知")) {
+            recordErrorMessage = `${errorMsg} (单号可能不正确)`;
+          } else if (errorMsg.includes("顺丰需要输入手机")) {
+            recordErrorMessage = `${errorMsg}（请添加4位手机尾号）`;
+          } else {
+            recordErrorMessage = errorMsg;
+          }
+          
+          errorDetails.push(`快递单号 ${trackingNumber} 查询失败: ${recordErrorMessage}`);
+          
+          // 将错误信息写入到报错信息字段
+          if (errorMessageField) {
+            await currentTable.setCellValue(errorMessageField.id, record.recordId, recordErrorMessage);
+          }
         }
 
         processedCount.value++;
@@ -1265,7 +1554,13 @@ const batchQuery = async () => {
       } catch (err) {
         failCount++;
         const errorMsg = err.message || '未知错误';
-        errorDetails.push(`快递单号 ${trackingNumber || '未知'} 处理失败: ${errorMsg}`);
+        recordErrorMessage = errorMsg;
+        errorDetails.push(`快递单号 ${trackingNumber || '未知'} 处理失败: ${recordErrorMessage}`);
+        
+        // 将错误信息写入到报错信息字段
+        if (errorMessageField) {
+          await currentTable.setCellValue(errorMessageField.id, record.recordId, recordErrorMessage);
+        }
       }
     }
     
@@ -1287,16 +1582,21 @@ const batchQuery = async () => {
   }
 };
 
-// 修改 clearCache 方法，清除所有消息
+// 修改 clearCache 方法，清除所有消息和新状态
 const clearCache = () => {
   localStorage.removeItem(STORAGE_KEY.FIELD_ID);
+  localStorage.removeItem('MOBILE_FIELD_ID');
   selectedField.value = null;
+  selectedMobileField.value = null;
   viewRecords.value = [];
   processedCount.value = 0;
   totalCount.value = 0;
   errorMessage.value = '';
   successMessage.value = '';
   hasError.value = false;
+  mobileValidationMessage.value = '';
+  chineseWarningMessage.value = ''; // 清除中文警告
+  showChineseConfirmDialog.value = false; // 清除确认对话框
   updateLoadingChart();
 };
 
@@ -1357,6 +1657,8 @@ const getRemainingQuota = async (baseId) => {
       remainingQuota.value = response.data.remaining_quota;
       domesticQuota.value = response.data.domestic_quota;
       internationalQuota.value = response.data.international_quota;
+      domesticPurchased.value = response.data.domestic_purchased;
+      internationalPurchased.value = response.data.international_purchased;
     }
   } catch (error) {
     console.error('获取剩余次数失败:', error);
@@ -1572,10 +1874,10 @@ const handlePayment = async (packageId) => {
 
 // 在 script setup 部分添加 getPackageDescription 函数
 const getPackageDescription = (quota) => {
-  if (quota === 1000) {
+  if (quota === 10000) {
     return '最具性价比';
   }
-  if (quota <= 100) {
+  if (quota <= 1000) {
     return '新用户专享';
   }
   return '企业首选';
@@ -1632,6 +1934,112 @@ const fallbackCopy = (text, type) => {
 
 // 复制状态 - 使用统一的状态变量
 const copiedType = ref('');
+
+// 在 script setup 部分添加新的响应式变量
+const domesticPurchased = ref(0);
+const internationalPurchased = ref(0);
+
+// 在 script setup 部分添加以下变量
+const mobileFieldOptions = ref([]);
+const selectedMobileField = ref(null);
+const showMobileFieldSelector = ref(false);
+const mobileValidationMessage = ref('');
+
+// 获取所有支持的字段类型，包括文本、数字、查找引用和公式类型
+const getMobileFieldOptions = async () => {
+  try {
+    const selection = await bitable.base.getSelection();
+    const table = await bitable.base.getTableById(selection.tableId);
+    const fields = await table.getFieldMetaList();
+    
+    // 筛选支持的字段类型: 文本、数字、查找引用、公式
+    mobileFieldOptions.value = fields.filter(field => 
+      field.type === FieldType.Text || 
+      field.type === FieldType.Number ||
+      field.type === FieldType.LookUp ||
+      field.type === FieldType.Formula
+    );
+  } catch (error) {
+    console.error('获取手机号码字段失败:', error);
+    errorMessage.value = '获取手机号码字段失败，请重试';
+  }
+};
+
+// 选择手机号码字段
+const selectMobileField = (field) => {
+  selectedMobileField.value = field;
+  showMobileFieldSelector.value = false;
+  mobileValidationMessage.value = '';
+  
+  // 存储字段ID到本地存储
+  if (field) {
+    localStorage.setItem('MOBILE_FIELD_ID', field.id);
+  } else {
+    localStorage.removeItem('MOBILE_FIELD_ID');
+  }
+};
+
+// 从本地存储恢复手机号码字段
+const restoreMobileField = async () => {
+  const savedMobileFieldId = localStorage.getItem('MOBILE_FIELD_ID');
+  if (savedMobileFieldId && mobileFieldOptions.value.length > 0) {
+    const savedField = mobileFieldOptions.value.find(field => field.id === savedMobileFieldId);
+    if (savedField) {
+      selectedMobileField.value = savedField;
+    }
+  }
+};
+
+// 获取字段对应的图标
+const getFieldIcon = (fieldType) => {
+  switch (fieldType) {
+    case FieldType.Text:
+      return 'fas fa-font text-sm';
+    case FieldType.Number:
+      return 'fas fa-hashtag text-sm';
+    case FieldType.LookUp:
+      return 'fas fa-search text-sm';
+    case FieldType.Formula:
+      return 'fas fa-equals text-sm';
+    default:
+      return 'fas fa-question text-sm';
+  }
+};
+
+// 验证四位手机号码
+const validateMobileNumber = (mobile) => {
+  if (!mobile) return null;
+  
+  // 移除空格和回车符
+  const cleanMobile = String(mobile).replace(/[\s\n\r]/g, '');
+  
+  // 检查是否是4位数字
+  if (/^\d{4}$/.test(cleanMobile)) {
+    return cleanMobile;
+  }
+  
+  // 如果不是4位数字但有数值，显示警告
+  if (cleanMobile) {
+    mobileValidationMessage.value = '手机号码必须为4位数字，当前值不符合要求，将不使用手机号码进行查询';
+  }
+  
+  return null;
+};
+
+// 添加中文检测警告信息变量
+const chineseWarningMessage = ref('');
+// 添加确认对话框相关状态
+const showChineseConfirmDialog = ref(false);
+const confirmDialogCallback = ref(null);
+
+// 切换中文确认对话框显示状态
+const toggleChineseConfirmDialog = (confirm = false) => {
+  showChineseConfirmDialog.value = !showChineseConfirmDialog.value;
+  // 如果关闭并且有回调函数，执行回调并传递结果
+  if (!showChineseConfirmDialog.value && confirmDialogCallback.value) {
+    confirmDialogCallback.value(confirm);
+  }
+};
 </script>
 
 <style>
