@@ -9,17 +9,6 @@ import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 // https://vitejs.dev/config/
 export default defineConfig({
   base: './',
-  server: {
-    host: true,
-    proxy: {
-      '/api': {
-        target: 'https://sky-eve-yang.com.cn',
-        changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '/logi')
-      }
-    }
-  },
-  
   plugins: [
     vue(),
     AutoImport({

@@ -854,7 +854,7 @@
       <div class="bg-white !rounded-xl w-full max-w-sm p-6 space-y-4">
         <div class="flex justify-between items-center">
           <h3 class="text-lg font-semibold">支付成功</h3>
-          <button @click="showPaymentSuccessModal = false" class="text-gray-400 hover:text-gray-600">
+          <button @click="closePaymentSuccessModal" class="text-gray-400 hover:text-gray-600">
             <i class="fas fa-times" style="width: 20px; height: 20px; display: flex; justify-content: center; align-items: center;"></i>
           </button>
         </div>
@@ -867,7 +867,7 @@
           <p class="text-gray-600">支付金额：¥{{ selectedPackage?.price || '0.00' }}</p>
           <p class="text-gray-600">查询额度：{{ formatNumber(selectedPackage?.quota || 0) }}次</p>
         </div>
-        <button @click="showPaymentSuccessModal = false" 
+        <button @click="closePaymentSuccessModal" 
                 class="w-full h-11 bg-primary text-white shadow !rounded-lg flex items-center justify-center hover:bg-primary/90 transition-colors">
           确定
         </button>
@@ -1300,7 +1300,8 @@ const ensureRequiredFields = async (table) => {
               { name: '已发货' },
               { name: '待取件' },
               { name: '已退回' },
-              { name: '疑难件' }
+              { name: '疑难件' },
+              { name: '已代签收' }
             ]
           };
         }
@@ -1526,6 +1527,13 @@ const executeBatchQuery = async () => {
             errorMessageField
           });
           successCount++;
+          
+          // 更新剩余额度
+          if (logisticsData.remaining !== undefined && logisticsData.purchased !== undefined) {
+            remainingQuota.value = logisticsData.remaining;
+            domesticQuota.value = logisticsData.remaining; // 更新国内额度
+            domesticPurchased.value = logisticsData.purchased; // 更新已购买额度
+          }
         } else {
           failCount++;
           // 从响应中获取错误信息
@@ -1672,7 +1680,7 @@ const createOrder = async (packageId) => {
     const selection = await bitable.base.getSelection();
     console.log('当前base_id:', selection.baseId);
     
-    const response = await axios.post('/api/api/payment/create', {
+    const response = await axios.post('https://sky-eve-yang.com.cn/logi/api/payment/create', {
       base_id: selection.baseId,
       package_id: packageId
     });
@@ -1691,13 +1699,95 @@ const createOrder = async (packageId) => {
       console.log('订单信息设置成功:', orderInfo.value);
       return true;
     } else {
-      console.error('创建订单失败:', response.data.message);
-      errorMessage.value = response.data.message || '创建订单失败';
+      console.error('创建订单失败:', response.data.message || response.data.error);
+      
+      // 针对体验包限购的特殊处理
+      if (response.data.error && response.data.error.includes('限购') && response.data.error.includes('已购买')) {
+        // 显示友好的警告提示
+        ElMessage({
+          message: `${response.data.error}，请选择其他套餐`,
+          type: 'warning',
+          duration: 5000
+        });
+        
+        // 将错误信息保存到状态中
+        errorMessage.value = `${response.data.error}，请选择其他套餐`;
+        
+        // 自动重置选中的套餐，返回套餐列表
+        setTimeout(() => {
+          selectedPackage.value = null;
+        }, 100);
+      } else {
+        errorMessage.value = response.data.message || response.data.error || '创建订单失败';
+      }
+      
       return false;
     }
   } catch (error) {
     console.error('创建订单异常:', error);
-    errorMessage.value = '创建订单失败，请重试';
+    
+    // 处理HTTP响应状态码错误
+    if (error.response) {
+      // 服务器返回了具体的错误信息
+      const statusCode = error.response.status;
+      const responseData = error.response.data || {};
+      
+      // 记录详细错误信息
+      console.error(`订单创建失败: 状态码 ${statusCode}`, responseData);
+      
+      if (statusCode === 400) {
+        // 400错误通常表示请求参数有误或服务端验证失败
+        if (responseData.error && responseData.error.includes('限购') && responseData.error.includes('已购买')) {
+          // 体验包限购特殊处理
+          const errorMsg = `${responseData.error}，请选择其他套餐`;
+          ElMessage({
+            message: errorMsg,
+            type: 'warning',
+            duration: 5000
+          });
+          errorMessage.value = errorMsg;
+          
+          // 自动返回套餐列表
+          setTimeout(() => {
+            selectedPackage.value = null;
+          }, 100);
+        } else {
+          // 其他400错误处理
+          const errorMsg = responseData.message || responseData.error || '请求参数错误，请重试';
+          ElMessage({
+            message: errorMsg,
+            type: 'error',
+            duration: 5000
+          });
+          errorMessage.value = errorMsg;
+        }
+      } else {
+        // 其他HTTP错误码处理
+        errorMessage.value = `服务器错误 (${statusCode}): ${responseData.message || '请稍后重试'}`;
+        ElMessage({
+          message: errorMessage.value,
+          type: 'error',
+          duration: 5000
+        });
+      }
+    } else if (error.request) {
+      // 请求已发送但没有收到响应
+      errorMessage.value = '服务器未响应，请检查网络连接';
+      ElMessage({
+        message: errorMessage.value,
+        type: 'error',
+        duration: 5000
+      });
+    } else {
+      // 请求设置时发生的错误
+      errorMessage.value = `请求错误: ${error.message}`;
+      ElMessage({
+        message: errorMessage.value,
+        type: 'error',
+        duration: 5000
+      });
+    }
+    
     return false;
   }
 };
@@ -1705,7 +1795,7 @@ const createOrder = async (packageId) => {
 // 查询订单状态
 const checkOrderStatus = async (orderId) => {
   try {
-    const response = await axios.get(`/api/api/payment/${orderId}`);
+    const response = await axios.get(`https://sky-eve-yang.com.cn/logi/api/payment/${orderId}`);
     
     if (response.data.success) {
       // 判断支付状态，status为1表示已支付
@@ -2039,6 +2129,14 @@ const toggleChineseConfirmDialog = (confirm = false) => {
   if (!showChineseConfirmDialog.value && confirmDialogCallback.value) {
     confirmDialogCallback.value(confirm);
   }
+};
+
+// 关闭支付成功弹窗
+const closePaymentSuccessModal = () => {
+  showPaymentSuccessModal.value = false;
+  // 重置支付相关状态，确保下次打开时显示套餐列表
+  selectedPackage.value = null;
+  orderInfo.value = null;
 };
 </script>
 

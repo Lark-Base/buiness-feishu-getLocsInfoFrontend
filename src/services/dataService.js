@@ -12,7 +12,8 @@ export const formatDateTime = (date) => {
 };
 
 // 创建axios实例
-const api = axios.create({
+const apiClient = axios.create({
+  baseURL: 'https://sky-eve-yang.com.cn/logi',
   timeout: 10000,
   headers: {
     'Accept': 'application/json',
@@ -36,22 +37,50 @@ export const queryExpressInfo = async (trackingNumber, baseId, mobile = null) =>
       requestData.mobile = mobile;
     }
     
-    const response = await api({
+    const response = await apiClient({
       method: 'post',
-      url: `/api/query/domestic`,
+      url: `/query/domestic`,
       data: requestData,
       headers: {
         'Content-Type': 'application/json'
-      }
+      },
+      withCredentials: true
     });
 
-    
+    // 响应格式可能有多种，需要适配
+    if (!response.data.success) {
+      // API明确表示查询失败
+      return {
+        success: false,
+        message: response.data.error || "查询失败",
+        remaining: response.data.remaining
+      };
+    }
 
     // 处理响应数据
     const data = response.data.data;
     
-    // 检查状态是否为"未知"，如果是则视为查询失败
-    if (data.status_text === "未知") {
+    // 检查不同格式的错误信息
+    if (data.error) {
+      return {
+        success: false,
+        message: data.error,
+        remaining: response.data.remaining
+      };
+    }
+    
+    // 处理顺丰需要手机号的情况（两种可能的格式）
+    if ((data.status_text && data.status_text.includes("顺丰需要输入手机")) || 
+        (data.status && data.status.text && data.status.text.includes("顺丰需要输入手机"))) {
+      return {
+        success: false,
+        message: data.status_text || (data.status && data.status.text) || "顺丰需要输入手机",
+        remaining: response.data.remaining
+      };
+    }
+    
+    // 检查状态是否存在，如果不存在则视为查询失败
+    if ((!data.status || !data.status.text) && !data.status_text) {
       return {
         success: false,
         message: "物流状态未知，查询失败，请确认快递单号是否正确",
@@ -59,40 +88,44 @@ export const queryExpressInfo = async (trackingNumber, baseId, mobile = null) =>
       };
     }
 
-    // 直接处理API返回的错误信息格式
-    if (data.events.length === 0) {
-      // 如果API直接返回失败和错误信息
+    // 检查状态是否为"未知"，如果是则视为查询失败
+    if ((data.status && data.status.text === "未知") || data.status_text === "未知") {
       return {
         success: false,
-        message: data.error || data.message || (
-          data.status_text && data.status_text.includes("顺丰需要输入手机") ? 
-          data.status_text : "查询失败"
-        ),
+        message: "物流状态未知，查询失败，请确认快递单号是否正确",
+        remaining: response.data.remaining
+      };
+    }
+
+    // 检查是否有事件数据
+    if (!data.events || data.events.length === 0) {
+      // 其他错误情况
+      return {
+        success: false,
+        message: data.message || "查询失败，未获取到物流信息",
         remaining: response.data.remaining
       };
     }
     
-    // 从事件中提取最新动态时间
-    let latestEventTime = '';
-    if (data.events && data.events.length > 0) {
-      latestEventTime = data.events[0].time;
-    }
+    // 从事件中提取最新动态信息
+    const latestEvent = data.events[0]; // 事件通常按时间倒序排列，第一个是最新的
     
     return {
       success: true,
       data: {
-        carrier: data.courier,
-        status_desc: data.latest_event,
-        status: data.status_text,
-        latest_event: data.latest_event,
-        latest_event_time: latestEventTime,
+        carrier: data.carrier && data.carrier.name ? data.carrier.name : (data.courier || "未知快递"),
+        status_desc: (data.status && data.status.description) || "",
+        status: (data.status && data.status.text) || data.status_text || "",
+        latest_event: latestEvent.description || latestEvent.context || "",
+        latest_event_time: latestEvent.eventTime || latestEvent.time || "",
         events: data.events.map(event => ({
-          time: event.time,
-          context: event.context,
-          location: event.location
+          time: event.eventTime || event.time || "",
+          context: event.description || event.context || "",
+          location: (event.location && event.location.name) ? event.location.name : (event.location || "")
         }))
       },
-      remaining: response.data.remaining
+      remaining: response.data.remaining,
+      purchased: response.data.purchased
     };
   } catch (error) {
     console.error('查询快递信息失败:', error);
@@ -125,10 +158,28 @@ export const updateRecordInfo = async ({
 }) => {
   const now = new Date();
   const currentTime = formatDateTime(now);
-  const hasChange = prevStatus !== logisticsData.data.status_desc;
+  
+  // 获取当前状态
+  const currentStatus = (logisticsData.data.status && logisticsData.data.status.text) || 
+                      logisticsData.data.status_text || 
+                      "未知状态";
+  
+  // 检测状态是否变化（考虑可能的对象格式）
+  let hasChange = false;
+  
+  // 如果prevStatus是对象（来自飞书表格的单选字段），获取其name属性
+  const prevStatusText = typeof prevStatus === 'object' && prevStatus !== null ? 
+                        (prevStatus.name || "") : 
+                        (prevStatus || "");
+  
+  // 比较状态文本
+  hasChange = prevStatusText !== currentStatus;
   
   // 定义刷新文本变量
-  const refreshText = `${logisticsData.data.carrier} 于 ${currentTime} 刷新。新变动 ${hasChange ? '√' : '×'}。${prevUpdateTime ? `上次刷新时间 ${prevUpdateTime}` : ''}`;
+  const refreshText = `${logisticsData.data.carrier} 于 ${currentTime} 刷新。` + 
+                     `当前状态: ${currentStatus}。` + 
+                     `${hasChange ? `状态已从 "${prevStatusText}" 变为 "${currentStatus}"` : '无状态变化'}。` + 
+                     `${prevUpdateTime ? `上次刷新时间 ${prevUpdateTime}` : ''}`;
 
   // 准备要更新的字段值对象
   const fieldsToUpdate = {};
@@ -136,14 +187,50 @@ export const updateRecordInfo = async ({
   try {
     // 处理单选字段 - 物流状态
     if (statusField) {
-      const statusOptions = await currentTable.getFieldMetaById(statusField.id);
-      if (statusOptions?.property?.options) {
-        const matchOption = statusOptions.property.options.find(
-          opt => opt.name === logisticsData.data.status
-        );
-        fieldsToUpdate[statusField.id] = matchOption || logisticsData.data.status;
-      } else {
-        fieldsToUpdate[statusField.id] = logisticsData.data.status;
+      try {
+        // 获取当前字段的所有选项
+        const statusOptions = await currentTable.getFieldMetaById(statusField.id);
+        if (statusOptions?.property?.options) {
+          // 将API返回的状态文本转为标准格式
+          const statusText = (logisticsData.data.status && logisticsData.data.status.text) || 
+                           logisticsData.data.status_text || 
+                           "未知状态";
+          
+          // 检查表格中是否已存在该选项
+          const existingOption = statusOptions.property.options.find(
+            opt => opt.name === statusText || 
+                 opt.name.toLowerCase() === statusText.toLowerCase() // 不区分大小写比较
+          );
+          
+          if (existingOption) {
+            // 如果已存在该选项，直接使用
+            fieldsToUpdate[statusField.id] = existingOption;
+          } else {
+            // 如果不存在，创建新选项
+            const newOption = {
+              name: statusText,
+              color: 0  // 默认颜色
+            };
+            fieldsToUpdate[statusField.id] = newOption;
+          }
+        } else {
+          // 如果字段没有选项配置，则创建基本选项
+          fieldsToUpdate[statusField.id] = {
+            name: (logisticsData.data.status && logisticsData.data.status.text) || 
+                 logisticsData.data.status_text || 
+                 "未知状态",
+            color: 0
+          };
+        }
+      } catch (error) {
+        console.error('处理物流状态字段时出错:', error);
+        // 发生错误时的回退方案
+        fieldsToUpdate[statusField.id] = {
+          name: (logisticsData.data.status && logisticsData.data.status.text) || 
+               logisticsData.data.status_text || 
+               "未知状态",
+          color: 0
+        };
       }
     }
 
@@ -181,14 +268,44 @@ export const updateRecordInfo = async ({
 
       // 处理单选字段 - 快递公司
       if (courierField) {
-        const courierOptions = await currentTable.getFieldMetaById(courierField.id);
-        if (courierOptions?.property?.options) {
-          const matchOption = courierOptions.property.options.find(
-            opt => opt.name === logisticsData.data.carrier
-          );
-          fieldsToUpdate[courierField.id] = matchOption || logisticsData.data.carrier;
-        } else {
-          fieldsToUpdate[courierField.id] = logisticsData.data.carrier;
+        try {
+          // 获取当前字段的所有选项
+          const courierOptions = await currentTable.getFieldMetaById(courierField.id);
+          if (courierOptions?.property?.options) {
+            // 将API返回的快递公司名称转为标准格式
+            const carrierName = logisticsData.data.carrier;
+            
+            // 检查表格中是否已存在该选项
+            const existingOption = courierOptions.property.options.find(
+              opt => opt.name === carrierName || 
+                   opt.name.toLowerCase() === carrierName.toLowerCase() // 不区分大小写比较
+            );
+            
+            if (existingOption) {
+              // 如果已存在该选项，直接使用
+              fieldsToUpdate[courierField.id] = existingOption;
+            } else {
+              // 如果不存在，创建新选项
+              const newOption = {
+                name: carrierName,
+                color: 0  // 默认颜色
+              };
+              fieldsToUpdate[courierField.id] = newOption;
+            }
+          } else {
+            // 如果字段没有选项配置，则创建基本选项
+            fieldsToUpdate[courierField.id] = {
+              name: logisticsData.data.carrier,
+              color: 0
+            };
+          }
+        } catch (error) {
+          console.error('处理快递公司字段时出错:', error);
+          // 发生错误时的回退方案
+          fieldsToUpdate[courierField.id] = {
+            name: logisticsData.data.carrier,
+            color: 0
+          };
         }
       }
 
@@ -206,7 +323,8 @@ export const updateRecordInfo = async ({
       // 处理快递员信息字段
       if (contactInfoField && sortedEvents.length > 0) {
         const latestEvent = sortedEvents[0].context;
-        const contactRegex = /快递员【(.*?)，(?:电话|联系电话)[:：](\d+)】/;
+        // 顺丰快递员提取格式: 快递员【薛强强，电话：17831023585】
+        const contactRegex = /快递员【(.*?)，(?:电话|联系电话)[：:](\d+)】/;
         const contactMatch = latestEvent.match(contactRegex);
         
         if (contactMatch && contactMatch.length >= 3) {
@@ -214,8 +332,8 @@ export const updateRecordInfo = async ({
           const contactPhone = contactMatch[2];
           fieldsToUpdate[contactInfoField.id] = `${contactName} (${contactPhone})`;
         } else {
-          // 尝试其他格式的联系信息提取
-          const altContactRegex = /【(.*?)，联系电话[:：](\d+)】/;
+          // 其他快递格式: 【薛强强，联系电话：17831023585】
+          const altContactRegex = /【(.*?)，联系电话[：:](\d+)】/;
           const altMatch = latestEvent.match(altContactRegex);
           
           if (altMatch && altMatch.length >= 3) {
@@ -298,9 +416,9 @@ export const updateRecordInfo = async ({
 // 查询剩余次数
 export const queryRemainingQuota = async (baseId) => {
   try {
-    const response = await api({
+    const response = await apiClient({
       method: 'get',
-      url: `/api/api/auth/total-remaining?base_id=${baseId}`,
+      url: `/api/auth/total-remaining?base_id=${baseId}`,
       withCredentials: true
     });
 
@@ -322,9 +440,9 @@ export const queryRemainingQuota = async (baseId) => {
 // 获取套餐列表
 export const getPackages = async () => {
   try {
-    const response = await api({
+    const response = await apiClient({
       method: 'get',
-      url: `/api/api/package/`,
+      url: `/api/package/`,
     });
 
     return response.data;
