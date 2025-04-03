@@ -298,9 +298,73 @@
                         <span>余额不足，请及时充值</span>
                       </div>
                        
-                      <!-- 即将上线提示 -->
-                      <div class="flex items-center justify-center gap-1.5 bg-indigo-50/80 py-1.5 !rounded-lg border border-indigo-100/50">
-                        <span class="text-xs font-medium text-indigo-600">国际查询功能即将上线</span>
+                      <!-- 国际查询已启用 -->
+                      <div v-if="isInternationalEnabled" class="space-y-3 mt-2">
+                        <!-- Base Token 输入 -->
+                        <div class="relative">
+                          <label class="text-xs text-gray-600 mb-1 block">多维表格授权码 (base_token)</label>
+                          <input 
+                            type="text" 
+                            v-model="baseToken" 
+                            placeholder="输入多维表格授权码" 
+                            class="w-full h-10 px-3 text-sm bg-white/80 border border-indigo-200/50 !rounded-lg focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-300"
+                          />
+                          <div class="mt-1 flex items-center justify-between">
+                            <div v-if="baseTokenError" class="text-xs text-red-500">
+                              {{ baseTokenError }}
+                            </div>
+                            <button 
+                              @click="showBaseTokenHelp = true"
+                              class="text-xs text-indigo-500 hover:text-indigo-600 transition-colors"
+                            >
+                              如何获取授权码?
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <!-- 查询按钮 -->
+                        <button 
+                          @click="batchQueryInternational"
+                          :disabled="isLoading || !selectedField || !baseToken"
+                          :class="[
+                            'w-full h-9 flex items-center justify-center gap-2 !rounded-lg text-sm font-medium transition-all',
+                            isLoading || !selectedField || !baseToken 
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                              : 'bg-gradient-to-r from-indigo-500 to-blue-500 text-white hover:shadow-md hover:shadow-indigo-100'
+                          ]"
+                        >
+                          <i v-if="isLoading" class="fas fa-spinner fa-spin text-xs"></i>
+                          <i v-else class="fas fa-search text-xs"></i>
+                          <span>查询国际物流</span>
+                        </button>
+                      </div>
+                      
+                      <!-- 国际查询功能切换 -->
+                      <div class="flex items-center justify-between mt-3">
+                        <div class="flex items-center gap-2">
+                          <span class="text-xs text-gray-600">启用国际查询</span>
+                          <div 
+                            @click="toggleInternationalEnabled"
+                            :class="[
+                              'w-10 h-5 !rounded-full relative cursor-pointer transition-colors',
+                              isInternationalEnabled ? 'bg-indigo-500' : 'bg-gray-300'
+                            ]"
+                          >
+                            <div 
+                              :class="[
+                                'absolute w-4 h-4 bg-white !rounded-full shadow-sm transition-transform top-0.5',
+                                isInternationalEnabled ? 'translate-x-5' : 'translate-x-0.5'
+                              ]"
+                            ></div>
+                          </div>
+                        </div>
+                        <button 
+                          @click="togglePaymentModal"
+                          class="text-xs text-indigo-500 px-2 py-1 bg-indigo-50 !rounded-lg hover:bg-indigo-100 transition-colors flex items-center gap-1"
+                        >
+                          <i class="fas fa-wallet text-[10px]"></i>
+                          <span>充值</span>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -507,6 +571,25 @@
 
             
 
+            <!-- 选中记录信息 -->
+            <div v-if="viewRecords.length > 0" class="mt-3 bg-blue-50/50 border border-blue-100 !rounded-lg p-3 flex items-center justify-between">
+              <div class="flex items-center gap-2">
+                <div class="w-6 h-6 bg-primary/10 !rounded-full flex items-center justify-center">
+                  <i class="fas fa-check text-primary text-xs"></i>
+                </div>
+                <span class="text-sm text-gray-700">
+                  已选择 <span class="font-medium text-primary">{{ viewRecords.length }}</span> 条记录
+                </span>
+              </div>
+              <button 
+                @click="showRecordSelector = true"
+                class="text-xs text-primary px-2 py-1 bg-white !rounded-lg border border-primary/20 flex items-center gap-1.5 hover:bg-primary/5 transition-colors"
+              >
+                <i class="fas fa-edit text-[10px]"></i>
+                <span>重新选择</span>
+              </button>
+            </div>
+
             <!-- 错误提示 -->
             <div v-if="errorMessage && hasError" class="mt-3 bg-red-50 border border-red-200 text-red-700 px-4 py-3 !rounded-lg">
               <div class="flex">
@@ -539,20 +622,20 @@
             <div class="mt-10">
               <div class="relative overflow-hidden">
                 <button @click="batchQuery"
-                        :disabled="isLoading || !selectedField || viewRecords.length === 0"
+                        :disabled="isLoading || !selectedField"
                         :class="[
                           'group/query w-full h-12 px-6 relative overflow-hidden',
-                          isLoading || !selectedField || viewRecords.length === 0 
+                          isLoading || !selectedField
                             ? 'bg-gray-100 text-gray-400 cursor-not-allowed !rounded-xl'
                             : 'bg-gradient-to-r from-primary to-blue-600 text-white hover:shadow-blue-200/50 hover:shadow-xl active:scale-[0.98] !rounded-xl'
                         ]">
                   
                   <!-- 按钮背景效果 - 增强版 -->
-                  <div v-if="!isLoading && selectedField && viewRecords.length > 0" 
+                  <div v-if="!isLoading && selectedField" 
                        class="absolute inset-0 w-full h-full opacity-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/query:translate-x-full group-hover/query:opacity-100 transition-all duration-1000 ease-in-out"></div>
                   
                   <!-- 鼠标悬浮光效 - 高级魔法版 -->
-                  <div v-if="!isLoading && selectedField && viewRecords.length > 0"
+                  <div v-if="!isLoading && selectedField"
                        class="absolute inset-0 w-full h-full opacity-0 group-hover/query:opacity-100 transition-opacity duration-300">
                     <!-- 基础光晕 -->
                     <div class="absolute inset-0 bg-gradient-to-r from-primary/0 via-white/5 to-primary/0 rounded-xl blur-md"></div>
@@ -573,18 +656,18 @@
                     <div class="flex justify-start">
                       <div class="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-white/10 !rounded-lg">
                         <i v-if="isLoading" class="fas fa-spinner fa-spin text-white"></i>
-                        <i v-else class="fas fa-play text-white text-sm"></i>
+                        <i v-else class="fas fa-hand-pointer text-white text-sm"></i>
                       </div>
                     </div>
                     
                     <!-- 中间文字 - 完全居中 -->
                     <div class="flex justify-center items-center">
-                      <span class="font-medium text-base whitespace-nowrap">{{ isLoading ? '处理中...' : '开始查询' }}</span>
+                      <span class="font-medium text-base whitespace-nowrap">{{ isLoading ? '处理中...' : '选择记录并查询' }}</span>
                     </div>
                     
                     <!-- 右侧状态 -->
                     <div class="flex justify-end">
-                      <div v-if="!isLoading && selectedField && viewRecords.length > 0" 
+                      <div v-if="!isLoading && selectedField" 
                            class="flex items-center gap-1.5">
                         <div class="relative w-2 h-2">
                           <div class="absolute inset-0 bg-white !rounded-full animate-ping opacity-70"></div>
@@ -930,6 +1013,60 @@
         </div>
       </div>
     </div>
+
+    <RecordSelector 
+      :show="showRecordSelector" 
+      @records-selected="handleRecordsSelected" 
+      @cancel="showRecordSelector = false"
+    />
+
+    <!-- Base Token 帮助弹窗 -->
+    <div v-if="showBaseTokenHelp" 
+         class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+         @click.self="showBaseTokenHelp = false">
+      <div class="bg-white !rounded-xl w-full max-w-md p-6 space-y-4">
+        <div class="flex justify-between items-center">
+          <h3 class="text-lg font-semibold">如何获取多维表格授权码</h3>
+          <button @click="showBaseTokenHelp = false" class="text-gray-400 hover:text-gray-600">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <div class="space-y-4">
+          <p class="text-sm text-gray-600">多维表格授权码(base_token)是用于授权访问国际物流查询服务的凭证。请按照以下步骤获取：</p>
+          
+          <div class="space-y-2">
+            <div class="flex items-start gap-2">
+              <div class="w-5 h-5 bg-indigo-100 !rounded-full flex items-center justify-center text-xs text-indigo-500 mt-0.5">1</div>
+              <p class="text-sm text-gray-600">联系管理员或客服获取国际查询的授权码</p>
+            </div>
+            <div class="flex items-start gap-2">
+              <div class="w-5 h-5 bg-indigo-100 !rounded-full flex items-center justify-center text-xs text-indigo-500 mt-0.5">2</div>
+              <p class="text-sm text-gray-600">授权码格式通常为: pt-xxxxxxxxxxxxxxxxxxxxxxx</p>
+            </div>
+            <div class="flex items-start gap-2">
+              <div class="w-5 h-5 bg-indigo-100 !rounded-full flex items-center justify-center text-xs text-indigo-500 mt-0.5">3</div>
+              <p class="text-sm text-gray-600">将授权码粘贴到输入框中即可</p>
+            </div>
+          </div>
+          
+          <div class="bg-amber-50 p-3 !rounded-lg border border-amber-100">
+            <div class="flex items-start gap-2">
+              <i class="fas fa-exclamation-circle text-amber-500 mt-0.5"></i>
+              <div class="text-sm text-amber-700">
+                <p class="font-medium">注意事项</p>
+                <p class="mt-1">授权码具有时效性，请妥善保管，避免泄露给他人。若授权码失效，请联系管理员重新获取。</p>
+              </div>
+            </div>
+          </div>
+          
+          <a href="https://www.feishu.cn/invitation/page/add_contact/?token=f7aof1e6-25ae-433a-affd-fd9164dfef96&amp;unique_id=bAZU6WdTe_thJ89teW6Djw==" 
+             target="_blank" 
+             class="block w-full py-2 bg-indigo-500 text-white text-center !rounded-lg hover:bg-indigo-600 transition-colors">
+            联系客服获取授权码
+          </a>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -940,8 +1077,9 @@ import { ref, onMounted, computed, isShallow, h, nextTick, onUnmounted, watch } 
 import * as echarts from 'echarts'
 import 'echarts-liquidfill'
 import 'swiper/css';
-import { formatDateTime, queryExpressInfo, updateRecordInfo, queryRemainingQuota, getPackages } from '../services/dataService';
+import { formatDateTime, queryExpressInfo, updateRecordInfo, queryRemainingQuota, getPackages, queryInternationalExpressInfo } from '../services/dataService';
 import axios from 'axios';
+// import RecordSelector from '../components/RecordSelector';
 
 // 状态变量
 const selectedField = ref(null);
@@ -966,6 +1104,13 @@ const packages = ref([]); // 套餐列表
 const isLoadingPackages = ref(false); // 是否正在加载套餐
 const showDomesticQuotaInfo = ref(false); // 国内额度详情面板
 const showInternationalQuotaInfo = ref(false); // 国际额度详情面板
+const showRecordSelector = ref(false); // 记录选择器弹窗状态
+
+// 国际查询相关状态
+const isInternationalEnabled = ref(false);
+const baseToken = ref('');
+const baseTokenError = ref('');
+const showBaseTokenHelp = ref(false);
 
 // 本地存储相关的常量
 const STORAGE_KEY = {
@@ -1396,33 +1541,14 @@ onUnmounted(() => {
 
 // 修改 batchQuery 方法
 const batchQuery = async () => {
-  if (!selectedField.value || viewRecords.value.length === 0) {
-    errorMessage.value = '请先选择字段并确保有数据';
+  if (!selectedField.value) {
+    errorMessage.value = '请先选择字段';
     hasError.value = true;
     return;
   }
 
-  // 如果存在中文字符，显示自定义确认对话框而不是使用 confirm
-  if (chineseWarningMessage.value) {
-    // 使用 Promise 和自定义对话框来代替 confirm
-    return new Promise((resolve) => {
-      showChineseConfirmDialog.value = true;
-      confirmDialogCallback.value = (confirmed) => {
-        showChineseConfirmDialog.value = false;
-        if (confirmed) {
-          // 用户确认继续，执行查询逻辑
-          resolve();
-          executeBatchQuery();
-        } else {
-          // 用户取消，不执行查询
-          resolve();
-        }
-      };
-    });
-  } else {
-    // 没有中文字符，直接执行查询
-    await executeBatchQuery();
-  }
+  // 显示记录选择器弹窗
+  showRecordSelector.value = true;
 };
 
 // 抽取查询执行逻辑到单独的方法
@@ -2137,6 +2263,211 @@ const closePaymentSuccessModal = () => {
   // 重置支付相关状态，确保下次打开时显示套餐列表
   selectedPackage.value = null;
   orderInfo.value = null;
+};
+
+// 处理选中的记录
+const handleRecordsSelected = ({ records, mode }) => {
+  // 隐藏记录选择器弹窗
+  showRecordSelector.value = false;
+  
+  // 保存选中的记录
+  viewRecords.value = records.map(record => ({
+    recordId: record.recordId,
+    value: record.fields[selectedField.value.id] || ''
+  }));
+  
+  // 记录总数
+  totalCount.value = viewRecords.value.length;
+  processedCount.value = 0;
+  
+  // 检查是否有中文字符
+  const chineseRecords = [];
+  for (const record of viewRecords.value) {
+    if (/[\u4e00-\u9fa5]/.test(record.value)) {
+      chineseRecords.push(record.value);
+    }
+  }
+  
+  // 如果存在中文字符，显示警告
+  if (chineseRecords.length > 0) {
+    const maxSamples = 3; // 最多显示3个含中文的样本
+    const samples = chineseRecords.slice(0, maxSamples).map(sample => `"${sample}"`).join('、');
+    const remaining = chineseRecords.length > maxSamples ? `等${chineseRecords.length}条记录` : '';
+    
+    chineseWarningMessage.value = `检测到${chineseRecords.length}条记录中包含中文字符，可能会影响查询准确性：${samples}${remaining}。建议移除中文后再查询。`;
+    
+    // 使用自定义确认对话框
+    showChineseConfirmDialog.value = true;
+    confirmDialogCallback.value = (confirmed) => {
+      showChineseConfirmDialog.value = false;
+      if (confirmed) {
+        // 用户确认继续，执行查询逻辑
+        executeBatchQuery();
+      }
+    };
+  } else {
+    // 没有中文字符，直接执行查询
+    executeBatchQuery();
+  }
+};
+
+// 国际查询相关状态
+const isInternationalEnabled = ref(false);
+const baseToken = ref('');
+const baseTokenError = ref('');
+const showBaseTokenHelp = ref(false);
+
+// 国际查询
+const batchQueryInternational = async () => {
+  if (!selectedField.value || !baseToken.value) {
+    baseTokenError.value = '请先选择字段或输入授权码';
+    return;
+  }
+
+  isLoading.value = true;
+  errorMessage.value = '';
+  successMessage.value = '';
+  hasError.value = false;
+  processedCount.value = 0;
+  totalCount.value = viewRecords.value.length;
+
+  try {
+    // 获取当前多维表格和表格
+    const selection = await bitable.base.getSelection();
+    const currentTable = await bitable.base.getTableById(selection.tableId);
+    const baseId = selection.baseId;
+    const tableId = selection.tableId;
+
+    // 确保所需字段存在
+    console.log('检查并创建必要字段...');
+    const fields = await ensureRequiredFields(currentTable);
+    
+    // 获取字段ID
+    const statusField = fields.find(f => f.name === FIELD_NAMES.LATEST_STATUS);
+    const updateTimeField = fields.find(f => f.name === FIELD_NAMES.LATEST_UPDATE_TIME);
+    const refreshChangeField = fields.find(f => f.name === FIELD_NAMES.REFRESH_CHANGE);
+    const allLogisticsInfoField = fields.find(f => f.name === FIELD_NAMES.ALL_LOGISTICS_INFO);
+    const courierField = fields.find(f => f.name === FIELD_NAMES.COURIER);
+    const latestEventField = fields.find(f => f.name === FIELD_NAMES.LATEST_EVENT);
+    const latestEventTimeField = fields.find(f => f.name === FIELD_NAMES.LATEST_EVENT_TIME);
+    const contactInfoField = fields.find(f => f.name === FIELD_NAMES.CONTACT_INFO);
+    const deliveryTimelineField = fields.find(f => f.name === FIELD_NAMES.DELIVERY_TIMELINE);
+    const errorMessageField = fields.find(f => f.name === FIELD_NAMES.ERROR_MESSAGE);
+
+    let successCount = 0;
+    let failCount = 0;
+    let errorDetails = [];
+
+    for (const record of viewRecords.value) {
+      try {
+        // 先清空该记录的错误信息
+        if (errorMessageField) {
+          await currentTable.setCellValue(errorMessageField.id, record.recordId, '');
+        }
+        
+        // 获取快递单号
+        const trackingNumberData = await currentTable.getCellValue(selectedField.value.id, record.recordId);
+        let trackingNumber = '';
+        if (Array.isArray(trackingNumberData)) {
+          trackingNumber = trackingNumberData.map(item => item.text).join('');
+        } else if (typeof trackingNumberData === 'string') {
+          trackingNumber = trackingNumberData;
+        }
+        
+        // 查询之前的状态
+        const prevStatus = await currentTable.getCellValue(statusField.id, record.recordId);
+        const prevUpdateTime = await currentTable.getCellValue(updateTimeField.id, record.recordId);
+        
+        // 使用国际查询
+        const logisticsData = await queryInternationalExpressInfo(
+          trackingNumber, 
+          baseId, 
+          baseToken.value,
+          tableId,
+          record.recordId
+        );
+        
+        if (logisticsData.success) {
+          await updateRecordInfo({
+            currentTable,
+            record,
+            statusField,
+            updateTimeField,
+            refreshChangeField,
+            allLogisticsInfoField,
+            logisticsData,
+            prevStatus,
+            prevUpdateTime,
+            courierField,
+            latestEventField,
+            latestEventTimeField,
+            contactInfoField,
+            deliveryTimelineField,
+            errorMessageField
+          });
+          successCount++;
+          
+          // 更新剩余额度
+          if (logisticsData.remaining !== undefined) {
+            internationalQuota.value = logisticsData.remaining;
+            if (logisticsData.purchased !== undefined) {
+              internationalPurchased.value = logisticsData.purchased;
+            }
+          }
+        } else {
+          failCount++;
+          // 从响应中获取错误信息
+          let errorMsg = logisticsData.message || '未知错误';
+          const recordErrorMessage = errorMsg;
+          
+          errorDetails.push(`快递单号 ${trackingNumber} 查询失败: ${recordErrorMessage}`);
+          
+          // 将错误信息写入到报错信息字段
+          if (errorMessageField) {
+            await currentTable.setCellValue(errorMessageField.id, record.recordId, recordErrorMessage);
+          }
+        }
+
+        processedCount.value++;
+        updateLoadingChart();
+        
+      } catch (err) {
+        failCount++;
+        const errorMsg = err.message || '未知错误';
+        errorDetails.push(`处理失败: ${errorMsg}`);
+        
+        // 将错误信息写入到报错信息字段（如果可能）
+        try {
+          if (errorMessageField && record.recordId) {
+            await currentTable.setCellValue(errorMessageField.id, record.recordId, errorMsg);
+          }
+        } catch (e) {
+          console.error('写入错误信息失败:', e);
+        }
+      }
+    }
+    
+    // 更新消息显示
+    if (failCount > 0) {
+      hasError.value = true;
+      errorMessage.value = `查询失败 ${failCount} 条：\n${errorDetails.join('\n')}`;
+    }
+    if (successCount > 0) {
+      successMessage.value = `成功查询 ${successCount} 条国际物流信息。`;
+    }
+    
+  } catch (error) {
+    console.error('国际查询失败:', error);
+    hasError.value = true;
+    errorMessage.value = error.message || '国际查询失败，请重试';
+  } finally {
+    isLoading.value = false;
+  }
+};
+
+// 切换国际查询功能状态
+const toggleInternationalEnabled = () => {
+  isInternationalEnabled.value = !isInternationalEnabled.value;
 };
 </script>
 

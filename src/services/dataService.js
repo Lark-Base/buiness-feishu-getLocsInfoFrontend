@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { bitable } from '@lark-base-open/js-sdk';
 
 // 格式化日期时间
 export const formatDateTime = (date) => {
@@ -611,6 +612,156 @@ export const getPackages = async () => {
     return response.data;
   } catch (error) {
     console.error('获取套餐列表失败:', error);
+    throw error;
+  }
+};
+
+// 获取记录列表的函数
+export const getRecordList = async (selectionMode = 'view') => {
+  try {
+    const selection = await bitable.base.getSelection();
+    const table = await bitable.base.getTableById(selection.tableId);
+    let recordIds = [];
+    let records = [];
+
+    // 获取记录ID
+    if (selectionMode === 'manual') {
+      // 手动选择模式 - 使用飞书UI交互
+      recordIds = await bitable.ui.selectRecordIdList(selection.tableId, selection.viewId);
+      if (!recordIds || recordIds.length === 0) {
+        return {
+          success: true,
+          data: []
+        };
+      }
+    } else {
+      // 视图模式 - 获取当前视图的所有可见记录
+      const view = await table.getViewById(selection.viewId);
+      recordIds = await view.getVisibleRecordIdList();
+    }
+
+    // 获取所有字段元数据
+    const fields = await table.getFieldMetaList();
+
+    // 获取每条记录的完整数据
+    for (const recordId of recordIds) {
+      try {
+        // 获取完整记录数据
+        const record = await table.getRecordById(recordId);
+        
+        // 确保记录存在
+        if (record) {
+          records.push({
+            recordId: recordId,
+            fields: record.fields || {}
+          });
+        }
+      } catch (err) {
+        console.error(`获取记录 ${recordId} 失败:`, err);
+      }
+    }
+
+    return {
+      success: true,
+      data: records
+    };
+  } catch (error) {
+    console.error('获取记录列表失败:', error);
+    return {
+      success: false,
+      error: error.message || '获取记录失败'
+    };
+  }
+};
+
+// 查询国际快递物流信息
+export const queryInternationalExpressInfo = async (trackingNumber, baseId, baseToken, tableId, recordId) => {
+  try {
+    const requestData = {
+      tracking_number: trackingNumber,
+      base_id: baseId,
+      base_token: baseToken
+    };
+    
+    // 如果有表格ID和记录ID，添加到请求数据中
+    if (tableId) {
+      requestData.table_id = tableId;
+    }
+    
+    if (recordId) {
+      requestData.record_id = recordId;
+    }
+    
+    const response = await apiClient({
+      method: 'post',
+      url: `/query/international`,
+      data: requestData,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      withCredentials: true
+    });
+
+    // 如果API明确表示查询失败
+    if (!response.data.success) {
+      return {
+        success: false,
+        message: response.data.error || "查询失败",
+        remaining: response.data.remaining
+      };
+    }
+
+    // 处理响应数据
+    const data = response.data.data;
+    
+    // 检查是否有错误信息
+    if (data.error) {
+      return {
+        success: false,
+        message: data.error,
+        remaining: response.data.remaining
+      };
+    }
+    
+    // 检查状态是否存在，如果不存在则视为查询失败
+    if (!data.status_text && data.status !== 4) {
+      return {
+        success: false,
+        message: "物流状态未知，查询失败，请确认快递单号是否正确",
+        remaining: response.data.remaining
+      };
+    }
+
+    // 构造返回数据
+    const statusText = data.status_text || (data.status === 4 ? "已送达" : "未知");
+    
+    // 处理事件数据
+    const events = data.events || [];
+    
+    return {
+      success: true,
+      data: {
+        carrier: data.courier || "未知快递",
+        status: statusText,
+        status_desc: "",
+        latest_event: data.latest_event || "",
+        latest_event_time: data.last_query_time || "",
+        events: events.map(event => ({
+          time: event.time || event.eventTime || "",
+          context: event.context || event.description || "",
+          location: event.location || ""
+        }))
+      },
+      remaining: response.data.remaining,
+      purchased: response.data.purchased
+    };
+  } catch (error) {
+    console.error('查询国际快递信息失败:', error);
+    if (error.code === 'ERR_NETWORK') {
+      throw new Error('网络连接失败，请检查网络设置或联系管理员');
+    } else if (error.code === 'ERR_SSL_PROTOCOL_ERROR') {
+      throw new Error('SSL证书验证失败，请联系管理员');
+    }
     throw error;
   }
 };
