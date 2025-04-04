@@ -24,5 +24,9 @@ export default defineConfig({
   },
   optimizeDeps: {
     include: ['echarts', 'echarts-liquidfill']
+  },
+  server: {
+    host: '0.0.0.0',
+    port: 5173
   }
 })

@@ -298,74 +298,14 @@
                         <span>余额不足，请及时充值</span>
                       </div>
                        
-                      <!-- 国际查询已启用 -->
-                      <div v-if="isInternationalEnabled" class="space-y-3 mt-2">
-                        <!-- Base Token 输入 -->
-                        <div class="relative">
-                          <label class="text-xs text-gray-600 mb-1 block">多维表格授权码 (base_token)</label>
-                          <input 
-                            type="text" 
-                            v-model="baseToken" 
-                            placeholder="输入多维表格授权码" 
-                            class="w-full h-10 px-3 text-sm bg-white/80 border border-indigo-200/50 !rounded-lg focus:border-indigo-400 focus:outline-none focus:ring-1 focus:ring-indigo-300"
-                          />
-                          <div class="mt-1 flex items-center justify-between">
-                            <div v-if="baseTokenError" class="text-xs text-red-500">
-                              {{ baseTokenError }}
-                            </div>
-                            <button 
-                              @click="showBaseTokenHelp = true"
-                              class="text-xs text-indigo-500 hover:text-indigo-600 transition-colors"
-                            >
-                              如何获取授权码?
-                            </button>
-                          </div>
-                        </div>
-                        
-                        <!-- 查询按钮 -->
-                        <button 
-                          @click="batchQueryInternational"
-                          :disabled="isLoading || !selectedField || !baseToken"
-                          :class="[
-                            'w-full h-9 flex items-center justify-center gap-2 !rounded-lg text-sm font-medium transition-all',
-                            isLoading || !selectedField || !baseToken 
-                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                              : 'bg-gradient-to-r from-indigo-500 to-blue-500 text-white hover:shadow-md hover:shadow-indigo-100'
-                          ]"
-                        >
-                          <i v-if="isLoading" class="fas fa-spinner fa-spin text-xs"></i>
-                          <i v-else class="fas fa-search text-xs"></i>
-                          <span>查询国际物流</span>
-                        </button>
-                      </div>
+                      <!-- 改进的充值按钮 -->
+                      <button @click="togglePaymentModal" 
+                              class="w-full h-8 bg-gradient-to-r from-indigo-500 to-indigo-600 text-white text-xs font-medium !rounded-lg flex items-center justify-center shadow-sm hover:shadow group-hover:scale-[1.01] transition-all">
+                        <i class="fas fa-wallet text-xs mr-1.5"></i>
+                        <span>立即充值</span>
+                      </button>
                       
-                      <!-- 国际查询功能切换 -->
-                      <div class="flex items-center justify-between mt-3">
-                        <div class="flex items-center gap-2">
-                          <span class="text-xs text-gray-600">启用国际查询</span>
-                          <div 
-                            @click="toggleInternationalEnabled"
-                            :class="[
-                              'w-10 h-5 !rounded-full relative cursor-pointer transition-colors',
-                              isInternationalEnabled ? 'bg-indigo-500' : 'bg-gray-300'
-                            ]"
-                          >
-                            <div 
-                              :class="[
-                                'absolute w-4 h-4 bg-white !rounded-full shadow-sm transition-transform top-0.5',
-                                isInternationalEnabled ? 'translate-x-5' : 'translate-x-0.5'
-                              ]"
-                            ></div>
-                          </div>
-                        </div>
-                        <button 
-                          @click="togglePaymentModal"
-                          class="text-xs text-indigo-500 px-2 py-1 bg-indigo-50 !rounded-lg hover:bg-indigo-100 transition-colors flex items-center gap-1"
-                        >
-                          <i class="fas fa-wallet text-[10px]"></i>
-                          <span>充值</span>
-                        </button>
-                      </div>
+                      <!-- 国际查询已启用 - 删除重复组件，保留新增的切换UI -->
                     </div>
                   </div>
                 </div>
@@ -376,7 +316,7 @@
             <div class="pt-4">
               <div class="flex items-center mb-4">
                 <div class="w-1 h-5 bg-gradient-to-b from-primary to-blue-400 !rounded-full mr-2"></div>
-                <h2 class="text-base font-medium bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-transparent">选择快递单号字段</h2>
+                <h2 class="text-base font-medium bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-transparent">查询操作</h2>
                 <div class="ml-auto">
                   <button @click="clearCache" 
                           class="group/reset text-sm text-gray-500 hover:text-primary transition-colors flex items-center gap-1.5 bg-gray-50 hover:bg-white px-3 py-1 !rounded-full border border-gray-100 hover:border-primary/20 hover:shadow-sm">
@@ -386,212 +326,331 @@
                 </div>
               </div>
               
-              <div class="relative">
-                <!-- 选择器按钮 -->
-                <button @click="showFieldSelector = !showFieldSelector" 
+              <!-- 这里是修改后的UI界面 -->
+              <div class="mt-3">
+                <div class="relative">
+                  <!-- 查询类型选择器 -->
+                  <div class="mb-4">
+                    <div class="flex items-center justify-between">
+                      <div class="text-sm font-medium text-gray-700 mb-2">查询类型</div>
+                    </div>
+                    <div class="flex border !rounded-xl p-1 bg-gray-50">
+                      <button 
+                        @click="isInternationalEnabled = false" 
                         :class="[
-                          'group/selector w-full h-12 px-4 bg-white/90 shadow-sm border !rounded-xl flex items-center justify-between transition-all hover:shadow',
-                          selectedField 
-                            ? 'border-primary/30 bg-blue-50/30' 
-                            : 'border-gray-200 hover:border-gray-300'
-                        ]">
-                  <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-primary/5 !rounded-lg flex items-center justify-center">
-                      <i class="fas fa-table text-primary group-hover/selector:scale-110 transition-transform"></i>
-                    </div>
-                    <div class="flex flex-col">
-                      <span class="text-gray-700 text-sm font-medium truncate">
-                        {{ selectedField ? selectedField.name : '请选择字段' }}
-                      </span>
-                      <span v-if="selectedField" class="text-xs text-gray-500">已选择字段</span>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <div v-if="viewRecords.length > 0" 
-                         class="flex items-center gap-1 px-2 py-0.5 bg-primary/5 !rounded-full">
-                      <i class="fas fa-list-ul text-primary text-[10px]"></i>
-                      <span class="text-xs font-medium text-primary">
-                        {{ viewRecords.length }}条记录
-                      </span>
-                    </div>
-                    <div class="w-6 h-6 flex items-center justify-center">
-                      <i :class="[
-                        'fas transition-transform duration-300', 
-                        showFieldSelector ? 'fa-chevron-up text-primary' : 'fa-chevron-down text-gray-400 group-hover/selector:text-primary'
-                      ]"></i>
+                          'flex-1 py-2 text-sm font-medium flex items-center justify-center gap-2 transition-all',
+                          !isInternationalEnabled 
+                            ? 'bg-white !rounded-lg shadow text-primary' 
+                            : 'text-gray-500 hover:text-gray-700'
+                        ]"
+                      >
+                        <i class="fas fa-map-marker-alt text-xs"></i>
+                        <span>国内查询</span>
+                      </button>
+                      <button 
+                        @click="isInternationalEnabled = true" 
+                        :class="[
+                          'flex-1 py-2 text-sm font-medium flex items-center justify-center gap-2 transition-all',
+                          isInternationalEnabled 
+                            ? 'bg-white !rounded-lg shadow text-indigo-500' 
+                            : 'text-gray-500 hover:text-gray-700'
+                        ]"
+                      >
+                        <i class="fas fa-globe text-xs"></i>
+                        <span>国际查询</span>
+                      </button>
                     </div>
                   </div>
-                </button>
-                
-                <!-- 字段选择下拉框 -->
-                <div v-if="showFieldSelector" 
-                     class="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-sm border border-primary/10 !rounded-xl shadow-xl max-h-60 overflow-y-auto">
-                  <!-- 字段列表 -->
-                  <div class="p-2">
-                    <div v-for="field in tableFields" 
-                         :key="field.id" 
-                         @click="selectField(field)"
-                         class="group/field px-3 py-2.5 cursor-pointer flex items-center justify-between transition-all !rounded-lg hover:bg-gray-50">
-                      <div class="flex items-center gap-3">
-                        <div :class="[
-                          'w-7 h-7 !rounded-lg flex items-center justify-center transition-colors',
-                          selectedField && selectedField.id === field.id
-                            ? 'bg-primary/10'
-                            : 'bg-gray-100 group-hover/field:bg-gray-200/80'
-                        ]">
+
+                  <!-- 根据查询类型显示不同的输入界面 -->
+                  <div v-if="!isInternationalEnabled" class="space-y-4">
+                    <!-- 国内查询界面 -->
+                    <div class="w-full border !rounded-xl p-4 bg-white">
+                      <div class="text-sm font-medium text-gray-700 mb-2">快递单号字段（必选）</div>
+                      <div class="relative">
+                        <div @click="showFieldSelector = !showFieldSelector" 
+                            :class="[
+                              'cursor-pointer group/selector w-full h-10 px-3 bg-white/90 shadow-sm border !rounded-lg flex items-center justify-between transition-all hover:shadow',
+                              selectedField 
+                                ? 'border-primary/30 bg-blue-50/30' 
+                                : 'border-gray-200 hover:border-gray-300'
+                            ]">
+                          <div class="flex items-center gap-2">
+                            <i class="fas fa-table text-primary"></i>
+                            <span class="text-gray-700 text-sm truncate">
+                              {{ selectedField ? selectedField.name : '请选择字段' }}
+                            </span>
+                          </div>
                           <i :class="[
-                            'fas fa-font text-sm',
-                            selectedField && selectedField.id === field.id
-                              ? 'text-primary'
-                              : 'text-gray-500'
+                            'fas fa-chevron-down text-gray-400',
+                            showFieldSelector ? 'fa-chevron-up text-primary' : ''
                           ]"></i>
                         </div>
-                        <span :class="[
-                          'text-sm font-medium truncate',
-                          selectedField && selectedField.id === field.id
-                            ? 'text-primary'
-                            : 'text-gray-700 group-hover/field:text-gray-900'
-                        ]">{{ field.name }}</span>
+                        
+                        <!-- 字段选择下拉框 -->
+                        <div v-if="showFieldSelector" 
+                            class="absolute left-0 right-0 z-[1000] mt-2 bg-white/95 backdrop-blur-sm border border-primary/10 !rounded-xl shadow-xl max-h-60 overflow-y-auto">
+                          <!-- 字段列表 -->
+                          <div class="p-2">
+                            <div v-for="field in tableFields" 
+                                :key="field.id" 
+                                @click="selectField(field)"
+                                class="group/field px-3 py-2.5 cursor-pointer flex items-center justify-between transition-all !rounded-lg hover:bg-gray-50">
+                              <div class="flex items-center gap-3">
+                                <div :class="[
+                                  'w-7 h-7 !rounded-lg flex items-center justify-center transition-colors',
+                                  selectedField && selectedField.id === field.id
+                                    ? isInternationalEnabled ? 'bg-indigo-100' : 'bg-primary/10'
+                                    : 'bg-gray-100 group-hover/field:bg-gray-200/80'
+                                ]">
+                                  <i :class="[
+                                    'fas fa-font text-sm',
+                                    selectedField && selectedField.id === field.id
+                                      ? isInternationalEnabled ? 'text-indigo-500' : 'text-primary'
+                                      : 'text-gray-500'
+                                  ]"></i>
+                                </div>
+                                <span :class="[
+                                  'text-sm font-medium truncate',
+                                  selectedField && selectedField.id === field.id
+                                    ? isInternationalEnabled ? 'text-indigo-500' : 'text-primary'
+                                    : 'text-gray-700 group-hover/field:text-gray-900'
+                                ]">{{ field.name }}</span>
+                              </div>
+                              <i v-if="selectedField && selectedField.id === field.id" 
+                                :class="['fas fa-check', isInternationalEnabled ? 'text-indigo-500' : 'text-primary']"></i>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <i v-if="selectedField && selectedField.id === field.id" 
-                         class="fas fa-check text-primary"></i>
+
+                      <div class="mt-3">
+                        <div class="text-sm font-medium text-gray-700 mb-2">手机号码字段（可选）</div>
+                        <div class="relative">
+                          <div @click="showMobileFieldSelector = !showMobileFieldSelector" 
+                              :class="[
+                                'cursor-pointer group/selector w-full h-10 px-3 bg-white/90 shadow-sm border !rounded-lg flex items-center justify-between transition-all hover:shadow',
+                                selectedMobileField 
+                                  ? 'border-primary/30 bg-blue-50/30' 
+                                  : 'border-gray-200 hover:border-gray-300'
+                              ]">
+                            <div class="flex items-center gap-2">
+                              <i class="fas fa-mobile-alt text-primary"></i>
+                              <span class="text-gray-700 text-sm truncate">
+                                {{ selectedMobileField ? selectedMobileField.name : '不使用手机号' }}
+                              </span>
+                            </div>
+                            <i :class="[
+                              'fas fa-chevron-down text-gray-400',
+                              showMobileFieldSelector ? 'fa-chevron-up text-primary' : ''
+                            ]"></i>
+                          </div>
+                          
+                          <!-- 手机号码字段选择下拉框 -->
+                          <div v-if="showMobileFieldSelector" 
+                              class="absolute left-0 right-0 z-[1000] mt-2 bg-white/95 backdrop-blur-sm border border-primary/10 !rounded-xl shadow-xl max-h-60 overflow-y-auto">
+                            <!-- 字段列表 -->
+                            <div class="p-2">
+                              <!-- 空选项 -->
+                              <div @click="selectMobileField(null)" 
+                                  class="group/field px-3 py-2.5 cursor-pointer flex items-center justify-between transition-all !rounded-lg hover:bg-gray-50">
+                                <div class="flex items-center gap-3">
+                                  <div class="w-7 h-7 !rounded-lg flex items-center justify-center transition-colors bg-gray-100 group-hover/field:bg-gray-200/80">
+                                    <i class="fas fa-times text-sm text-gray-500"></i>
+                                  </div>
+                                  <span class="text-sm font-medium truncate text-gray-700 group-hover/field:text-gray-900">不选择</span>
+                                </div>
+                                <i v-if="!selectedMobileField" class="fas fa-check text-primary"></i>
+                              </div>
+                              
+                              <!-- 手机号码字段列表 -->
+                              <div v-for="field in mobileFieldOptions" 
+                                  :key="field.id" 
+                                  @click="selectMobileField(field)"
+                                  class="group/field px-3 py-2.5 cursor-pointer flex items-center justify-between transition-all !rounded-lg hover:bg-gray-50">
+                                <div class="flex items-center gap-3">
+                                  <div :class="[
+                                    'w-7 h-7 !rounded-lg flex items-center justify-center transition-colors',
+                                    selectedMobileField && selectedMobileField.id === field.id
+                                      ? 'bg-primary/10'
+                                      : 'bg-gray-100 group-hover/field:bg-gray-200/80'
+                                  ]">
+                                    <i :class="[
+                                      getFieldIcon(field.type),
+                                      selectedMobileField && selectedMobileField.id === field.id
+                                        ? 'text-primary'
+                                        : 'text-gray-500'
+                                    ]"></i>
+                                  </div>
+                                  <span :class="[
+                                    'text-sm font-medium truncate',
+                                    selectedMobileField && selectedMobileField.id === field.id
+                                      ? 'text-primary'
+                                      : 'text-gray-700 group-hover/field:text-gray-900'
+                                  ]">{{ field.name }}</span>
+                                </div>
+                                <i v-if="selectedMobileField && selectedMobileField.id === field.id" 
+                                  class="fas fa-check text-primary"></i>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
+
+                  <div v-else class="space-y-4">
+                    <!-- 国际查询界面 -->
+                    <div class="w-full border !rounded-xl p-4 bg-white">
+                      <div class="text-sm font-medium text-gray-700 mb-2">快递单号字段（必选）</div>
+                      <div class="relative">
+                        <div @click="showFieldSelector = !showFieldSelector" 
+                            :class="[
+                              'cursor-pointer group/selector w-full h-10 px-3 bg-white/90 shadow-sm border !rounded-lg flex items-center justify-between transition-all hover:shadow',
+                              selectedField 
+                                ? 'border-indigo-300 bg-indigo-50/30' 
+                                : 'border-gray-200 hover:border-gray-300'
+                            ]">
+                          <div class="flex items-center gap-2">
+                            <i class="fas fa-table text-indigo-500"></i>
+                            <span class="text-gray-700 text-sm truncate">
+                              {{ selectedField ? selectedField.name : '请选择字段' }}
+                            </span>
+                          </div>
+                          <i :class="[
+                            'fas fa-chevron-down text-gray-400',
+                            showFieldSelector ? 'fa-chevron-up text-indigo-500' : ''
+                          ]"></i>
+                        </div>
+                        
+                        <!-- 字段选择下拉框 -->
+                        <div v-if="showFieldSelector" 
+                            class="absolute left-0 right-0 z-[1000] mt-2 bg-white/95 backdrop-blur-sm border border-indigo-200/80 !rounded-xl shadow-xl max-h-60 overflow-y-auto">
+                          <!-- 字段列表 -->
+                          <div class="p-2">
+                            <div v-for="field in tableFields" 
+                                :key="field.id" 
+                                @click="selectField(field)"
+                                class="group/field px-3 py-2.5 cursor-pointer flex items-center justify-between transition-all !rounded-lg hover:bg-gray-50">
+                              <div class="flex items-center gap-3">
+                                <div :class="[
+                                  'w-7 h-7 !rounded-lg flex items-center justify-center transition-colors',
+                                  selectedField && selectedField.id === field.id
+                                    ? 'bg-indigo-100'
+                                    : 'bg-gray-100 group-hover/field:bg-gray-200/80'
+                                ]">
+                                  <i :class="[
+                                    'fas fa-font text-sm',
+                                    selectedField && selectedField.id === field.id
+                                      ? 'text-indigo-500'
+                                      : 'text-gray-500'
+                                  ]"></i>
+                                </div>
+                                <span :class="[
+                                  'text-sm font-medium truncate',
+                                  selectedField && selectedField.id === field.id
+                                    ? 'text-indigo-500'
+                                    : 'text-gray-700 group-hover/field:text-gray-900'
+                                ]">{{ field.name }}</span>
+                              </div>
+                              <i v-if="selectedField && selectedField.id === field.id" 
+                                class="fas fa-check text-indigo-500"></i>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="mt-3">
+                        <div class="text-sm font-medium text-gray-700 mb-2">多维表格授权码（必填）</div>
+                        <div class="relative">
+                          <input 
+                            v-model="baseToken" 
+                            type="text" 
+                            placeholder="请输入授权码 (pt-xxx...)" 
+                            class="w-full h-10 px-3 bg-white border border-gray-200 !rounded-lg focus:border-indigo-300 focus:outline-none"
+                          />
+                          <button 
+                            @click="showBaseTokenHelp = true" 
+                            class="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-indigo-500"
+                          >
+                            <i class="fas fa-question-circle"></i>
+                          </button>
+                        </div>
+                        <div v-if="baseTokenError" class="mt-1 text-xs text-red-500">
+                          {{ baseTokenError }}
+                        </div>
+                        <div class="mt-1 text-xs text-gray-500">
+                          格式: pt-xxxxxxxxxxxxxxxxxxxxxxxx
+                          <button @click="showBaseTokenHelp = true" class="text-indigo-500 hover:underline">如何获取?</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- 删除这里的下拉框，已经移到各自的父容器内 -->
+
+                  <button @click="isInternationalEnabled ? batchQueryInternational() : batchQuery()"
+                          :disabled="isLoading || !selectedField || (isInternationalEnabled && !baseToken)"
+                          :class="[
+                            'group/query w-full h-12 px-6 relative overflow-hidden mt-4',
+                            isLoading || !selectedField || (isInternationalEnabled && !baseToken)
+                              ? 'bg-gray-100 text-gray-400 cursor-not-allowed !rounded-xl'
+                              : isInternationalEnabled
+                                ? 'bg-gradient-to-r from-indigo-500 to-indigo-600 text-white hover:shadow-indigo-200/50 hover:shadow-xl active:scale-[0.98] !rounded-xl'
+                                : 'bg-gradient-to-r from-primary to-blue-600 text-white hover:shadow-blue-200/50 hover:shadow-xl active:scale-[0.98] !rounded-xl'
+                          ]">
+                    
+                    <!-- 按钮背景效果 - 增强版 -->
+                    <div v-if="!isLoading && selectedField && (!isInternationalEnabled || baseToken)" 
+                        class="absolute inset-0 w-full h-full opacity-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/query:translate-x-full group-hover/query:opacity-100 transition-all duration-1000 ease-in-out"></div>
+                    
+                    <!-- 网格布局 -->
+                    <div class="grid grid-cols-3 items-center h-full relative z-10">
+                      <!-- 左侧图标 -->
+                      <div class="flex justify-start">
+                        <div class="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-white/10 !rounded-lg">
+                          <i v-if="isLoading" class="fas fa-spinner fa-spin text-white"></i>
+                          <i v-else-if="isInternationalEnabled" class="fas fa-globe text-white text-sm"></i>
+                          <i v-else class="fas fa-truck text-white text-sm"></i>
+                        </div>
+                      </div>
+                      
+                      <!-- 中间文字 - 完全居中 -->
+                      <div class="flex justify-center items-center">
+                        <span class="font-medium text-base whitespace-nowrap">
+                          {{ isLoading ? '处理中...' : (isInternationalEnabled ? '国际物流查询' : '国内物流查询') }}
+                        </span>
+                      </div>
+                      
+                      <!-- 右侧状态 -->
+                      <div class="flex justify-end">
+                        <div v-if="!isLoading && selectedField && (!isInternationalEnabled || baseToken)" 
+                            class="flex items-center gap-1.5">
+                          <div class="relative w-2 h-2">
+                            <div class="absolute inset-0 bg-white !rounded-full animate-ping opacity-70"></div>
+                            <div class="absolute inset-0 bg-white !rounded-full"></div>
+                          </div>
+                          <span class="text-xs font-medium text-white/90">就绪</span>
+                        </div>
+                        <!-- 占位元素 -->
+                        <div v-else class="w-7 h-7 opacity-0"></div>
+                      </div>
+                    </div>
+                  </button>
                 </div>
               </div>
             </div>
 
             <!-- 中文字符警告提示 -->
-            <div v-if="chineseWarningMessage" class="mt-2 p-2 bg-amber-50 !rounded-lg border border-amber-100 text-amber-700 text-xs">
+            <div v-if="chineseWarningMessage" class="mt-4 p-3 bg-amber-50 !rounded-lg border border-amber-100 text-amber-700 text-xs">
               <div class="flex items-start gap-2">
                 <i class="fas fa-exclamation-triangle text-amber-500 mt-0.5"></i>
                 <span>{{ chineseWarningMessage }}</span>
               </div>
             </div>
 
-            <!-- 手机号码字段选择 -->
-            <div class="pt-4 mt-3">
-              <div class="flex items-center mb-4">
-                <div class="w-1 h-5 bg-gradient-to-b from-primary to-blue-400 !rounded-full mr-2"></div>
-                <h2 class="text-base font-medium bg-gradient-to-r from-gray-700 to-gray-900 bg-clip-text text-transparent">选择四位手机号码字段</h2>
-                <div class="ml-2">
-                  <div class="text-xs text-gray-500 bg-gray-50 px-2 py-0.5 !rounded-full border border-gray-100">
-                    <span>非必选</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="relative">
-                <!-- 手机号码选择器按钮 -->
-                <button @click="showMobileFieldSelector = !showMobileFieldSelector" 
-                        :class="[
-                          'group/mobile-selector w-full h-12 px-4 bg-white/90 shadow-sm border !rounded-xl flex items-center justify-between transition-all hover:shadow',
-                          selectedMobileField 
-                            ? 'border-primary/30 bg-blue-50/30' 
-                            : 'border-gray-200 hover:border-gray-300'
-                        ]">
-                  <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 bg-primary/5 !rounded-lg flex items-center justify-center">
-                      <i class="fas fa-mobile-alt text-primary group-hover/mobile-selector:scale-110 transition-transform"></i>
-                    </div>
-                    <div class="flex flex-col">
-                      <span class="text-gray-700 text-sm font-medium truncate">
-                        {{ selectedMobileField ? selectedMobileField.name : '请选择手机号码字段（可选）' }}
-                      </span>
-                      <span v-if="selectedMobileField" class="text-xs text-gray-500">已选择手机号码字段</span>
-                    </div>
-                  </div>
-                  <div class="flex items-center gap-2">
-                    <div class="w-6 h-6 flex items-center justify-center">
-                      <i :class="[
-                        'fas transition-transform duration-300', 
-                        showMobileFieldSelector ? 'fa-chevron-up text-primary' : 'fa-chevron-down text-gray-400 group-hover/mobile-selector:text-primary'
-                      ]"></i>
-                    </div>
-                  </div>
-                </button>
-                
-                <!-- 手机号码字段选择下拉框 -->
-                <div v-if="showMobileFieldSelector" 
-                     class="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-sm border border-primary/10 !rounded-xl shadow-xl max-h-60 overflow-y-auto">
-                  <!-- 字段列表 -->
-                  <div class="p-2">
-                    <!-- 空选项 -->
-                    <div @click="selectMobileField(null)" 
-                         class="group/field px-3 py-2.5 cursor-pointer flex items-center justify-between transition-all !rounded-lg hover:bg-gray-50">
-                      <div class="flex items-center gap-3">
-                        <div class="w-7 h-7 !rounded-lg flex items-center justify-center transition-colors bg-gray-100 group-hover/field:bg-gray-200/80">
-                          <i class="fas fa-times text-sm text-gray-500"></i>
-                        </div>
-                        <span class="text-sm font-medium truncate text-gray-700 group-hover/field:text-gray-900">不选择</span>
-                      </div>
-                      <i v-if="!selectedMobileField" class="fas fa-check text-primary"></i>
-                    </div>
-                    
-                    <!-- 手机号码字段列表 -->
-                    <div v-for="field in mobileFieldOptions" 
-                         :key="field.id" 
-                         @click="selectMobileField(field)"
-                         class="group/field px-3 py-2.5 cursor-pointer flex items-center justify-between transition-all !rounded-lg hover:bg-gray-50">
-                      <div class="flex items-center gap-3">
-                        <div :class="[
-                          'w-7 h-7 !rounded-lg flex items-center justify-center transition-colors',
-                          selectedMobileField && selectedMobileField.id === field.id
-                            ? 'bg-primary/10'
-                            : 'bg-gray-100 group-hover/field:bg-gray-200/80'
-                        ]">
-                          <i :class="[
-                            getFieldIcon(field.type),
-                            selectedMobileField && selectedMobileField.id === field.id
-                              ? 'text-primary'
-                              : 'text-gray-500'
-                          ]"></i>
-                        </div>
-                        <span :class="[
-                          'text-sm font-medium truncate',
-                          selectedMobileField && selectedMobileField.id === field.id
-                            ? 'text-primary'
-                            : 'text-gray-700 group-hover/field:text-gray-900'
-                        ]">{{ field.name }}</span>
-                      </div>
-                      <i v-if="selectedMobileField && selectedMobileField.id === field.id" 
-                         class="fas fa-check text-primary"></i>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              <div v-if="mobileValidationMessage" class="mt-2 p-2 bg-amber-50 !rounded-lg border border-amber-100 text-amber-700 text-xs">
-                <div class="flex items-start gap-2">
-                  <i class="fas fa-info-circle text-amber-500 mt-0.5"></i>
-                  <span>{{ mobileValidationMessage }}</span>
-                </div>
-              </div>
-            </div>
-
-            
-
-            <!-- 选中记录信息 -->
-            <div v-if="viewRecords.length > 0" class="mt-3 bg-blue-50/50 border border-blue-100 !rounded-lg p-3 flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <div class="w-6 h-6 bg-primary/10 !rounded-full flex items-center justify-center">
-                  <i class="fas fa-check text-primary text-xs"></i>
-                </div>
-                <span class="text-sm text-gray-700">
-                  已选择 <span class="font-medium text-primary">{{ viewRecords.length }}</span> 条记录
-                </span>
-              </div>
-              <button 
-                @click="showRecordSelector = true"
-                class="text-xs text-primary px-2 py-1 bg-white !rounded-lg border border-primary/20 flex items-center gap-1.5 hover:bg-primary/5 transition-colors"
-              >
-                <i class="fas fa-edit text-[10px]"></i>
-                <span>重新选择</span>
-              </button>
-            </div>
-
             <!-- 错误提示 -->
-            <div v-if="errorMessage && hasError" class="mt-3 bg-red-50 border border-red-200 text-red-700 px-4 py-3 !rounded-lg">
+            <div v-if="errorMessage && hasError" class="mt-4 bg-red-50 border border-red-200 text-red-700 px-4 py-3 !rounded-lg">
               <div class="flex">
                 <div class="flex-shrink-0">
                   <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
@@ -605,7 +664,7 @@
             </div>
 
             <!-- 成功提示 -->
-            <div v-if="successMessage" class="mt-3 bg-green-50 border border-green-200 text-green-700 px-4 py-3 !rounded-lg">
+            <div v-if="successMessage" class="mt-4 bg-green-50 border border-green-200 text-green-700 px-4 py-3 !rounded-lg">
               <div class="flex">
                 <div class="flex-shrink-0">
                   <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
@@ -618,70 +677,6 @@
               </div>
             </div>
 
-            <!-- 操作按钮 - 魔法版 -->
-            <div class="mt-10">
-              <div class="relative overflow-hidden">
-                <button @click="batchQuery"
-                        :disabled="isLoading || !selectedField"
-                        :class="[
-                          'group/query w-full h-12 px-6 relative overflow-hidden',
-                          isLoading || !selectedField
-                            ? 'bg-gray-100 text-gray-400 cursor-not-allowed !rounded-xl'
-                            : 'bg-gradient-to-r from-primary to-blue-600 text-white hover:shadow-blue-200/50 hover:shadow-xl active:scale-[0.98] !rounded-xl'
-                        ]">
-                  
-                  <!-- 按钮背景效果 - 增强版 -->
-                  <div v-if="!isLoading && selectedField" 
-                       class="absolute inset-0 w-full h-full opacity-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover/query:translate-x-full group-hover/query:opacity-100 transition-all duration-1000 ease-in-out"></div>
-                  
-                  <!-- 鼠标悬浮光效 - 高级魔法版 -->
-                  <div v-if="!isLoading && selectedField"
-                       class="absolute inset-0 w-full h-full opacity-0 group-hover/query:opacity-100 transition-opacity duration-300">
-                    <!-- 基础光晕 -->
-                    <div class="absolute inset-0 bg-gradient-to-r from-primary/0 via-white/5 to-primary/0 rounded-xl blur-md"></div>
-                    <!-- 脉动边框 -->
-                    <div class="absolute -inset-0.5 bg-gradient-to-r from-primary/0 via-blue-400/20 to-primary/0 rounded-xl opacity-0 group-hover/query:opacity-100 transition-opacity duration-700 animate-pulse"></div>
-                    <!-- 光环效果 -->
-                    <div class="absolute inset-0 overflow-hidden">
-                      <div class="w-1/2 h-full bg-gradient-to-r from-transparent via-white/20 to-transparent -skew-x-[20deg] -translate-x-full group-hover/query:animate-shine"></div>
-                    </div>
-                    <!-- 角落闪光点 -->
-                    <div class="absolute w-2 h-2 rounded-full bg-white/80 blur-sm top-2 right-2 opacity-0 group-hover/query:animate-twinkle"></div>
-                    <div class="absolute w-1.5 h-1.5 rounded-full bg-white/80 blur-sm bottom-3 left-4 opacity-0 group-hover/query:animate-twinkle-delayed"></div>
-                  </div>
-                  
-                  <!-- 网格布局 -->
-                  <div class="grid grid-cols-3 items-center h-full relative z-10">
-                    <!-- 左侧图标 -->
-                    <div class="flex justify-start">
-                      <div class="w-7 h-7 flex-shrink-0 flex items-center justify-center bg-white/10 !rounded-lg">
-                        <i v-if="isLoading" class="fas fa-spinner fa-spin text-white"></i>
-                        <i v-else class="fas fa-hand-pointer text-white text-sm"></i>
-                      </div>
-                    </div>
-                    
-                    <!-- 中间文字 - 完全居中 -->
-                    <div class="flex justify-center items-center">
-                      <span class="font-medium text-base whitespace-nowrap">{{ isLoading ? '处理中...' : '选择记录并查询' }}</span>
-                    </div>
-                    
-                    <!-- 右侧状态 -->
-                    <div class="flex justify-end">
-                      <div v-if="!isLoading && selectedField" 
-                           class="flex items-center gap-1.5">
-                        <div class="relative w-2 h-2">
-                          <div class="absolute inset-0 bg-white !rounded-full animate-ping opacity-70"></div>
-                          <div class="absolute inset-0 bg-white !rounded-full"></div>
-                        </div>
-                        <span class="text-xs font-medium text-white/90">就绪</span>
-                      </div>
-                      <!-- 占位元素 -->
-                      <div v-else class="w-7 h-7 opacity-0"></div>
-                    </div>
-                  </div>
-                </button>
-              </div>
-            </div>
           </div>
         </div>
       </div>
@@ -920,11 +915,11 @@
             </div>
             <div class="mt-1 text-gray-600">所有成员共享额度，务必在确认使用的表格中购买</div>
           </div>
-          <a href="https://www.feishu.cn/invitation/page/add_contact/?token=f7aof1e6-25ae-433a-affd-fd9164dfef96&amp;unique_id=bAZU6WdTe_thJ89teW6Djw==" 
+          <a href="https://jfsq6znqku.feishu.cn/wiki/E34hw9OzWiMKQ6kWJXWcRkVGnwd" 
             target="_blank" 
             class="flex items-center justify-center gap-2 mt-1 py-1.5 bg-white !rounded-lg text-primary hover:bg-blue-50 transition-colors border border-blue-100 group">
             <i class="fas fa-headset text-xs"></i>
-            <span class="font-medium">联系开发者换绑或解决问题</span>
+            <span class="font-medium">获取多维表格授权码</span>
             <i class="fas fa-arrow-right text-[10px] opacity-0 group-hover:opacity-100 transition-opacity"></i>
           </a>
         </div>
@@ -1032,37 +1027,22 @@
           </button>
         </div>
         <div class="space-y-4">
-          <p class="text-sm text-gray-600">多维表格授权码(base_token)是用于授权访问国际物流查询服务的凭证。请按照以下步骤获取：</p>
+          <p class="text-sm text-gray-600">多维表格授权码(base_token)是用于授权访问国际物流查询服务的凭证。</p>
           
-          <div class="space-y-2">
+          <div class="p-3 bg-blue-50 !rounded-lg border border-blue-100">
             <div class="flex items-start gap-2">
-              <div class="w-5 h-5 bg-indigo-100 !rounded-full flex items-center justify-center text-xs text-indigo-500 mt-0.5">1</div>
-              <p class="text-sm text-gray-600">联系管理员或客服获取国际查询的授权码</p>
-            </div>
-            <div class="flex items-start gap-2">
-              <div class="w-5 h-5 bg-indigo-100 !rounded-full flex items-center justify-center text-xs text-indigo-500 mt-0.5">2</div>
-              <p class="text-sm text-gray-600">授权码格式通常为: pt-xxxxxxxxxxxxxxxxxxxxxxx</p>
-            </div>
-            <div class="flex items-start gap-2">
-              <div class="w-5 h-5 bg-indigo-100 !rounded-full flex items-center justify-center text-xs text-indigo-500 mt-0.5">3</div>
-              <p class="text-sm text-gray-600">将授权码粘贴到输入框中即可</p>
-            </div>
-          </div>
-          
-          <div class="bg-amber-50 p-3 !rounded-lg border border-amber-100">
-            <div class="flex items-start gap-2">
-              <i class="fas fa-exclamation-circle text-amber-500 mt-0.5"></i>
-              <div class="text-sm text-amber-700">
-                <p class="font-medium">注意事项</p>
-                <p class="mt-1">授权码具有时效性，请妥善保管，避免泄露给他人。若授权码失效，请联系管理员重新获取。</p>
+              <i class="fas fa-info-circle text-blue-500 mt-0.5"></i>
+              <div class="text-sm text-blue-700">
+                <p class="font-medium">获取授权码教程</p>
+                <p class="mt-1">我们提供了详细的图文教程，帮助您快速获取多维表格授权码。</p>
               </div>
             </div>
           </div>
           
-          <a href="https://www.feishu.cn/invitation/page/add_contact/?token=f7aof1e6-25ae-433a-affd-fd9164dfef96&amp;unique_id=bAZU6WdTe_thJ89teW6Djw==" 
+          <a href="https://jfsq6znqku.feishu.cn/wiki/E34hw9OzWiMKQ6kWJXWcRkVGnwd" 
              target="_blank" 
              class="block w-full py-2 bg-indigo-500 text-white text-center !rounded-lg hover:bg-indigo-600 transition-colors">
-            联系客服获取授权码
+            查看授权码获取教程
           </a>
         </div>
       </div>
@@ -1114,11 +1094,15 @@ const showBaseTokenHelp = ref(false);
 
 // 本地存储相关的常量
 const STORAGE_KEY = {
-  FIELD_ID: 'express_tracking_field_id'
+  FIELD_ID: 'express_tracking_field_id',
+  MOBILE_FIELD_ID: 'mobile_field_id',
+  BASE_TOKEN: 'base_token',
+  QUERY_TYPE: 'query_type'
 };
 
 // 添加字段名常量
 const FIELD_NAMES = {
+  // 国内物流字段
   LATEST_STATUS: '物流状态',
   LATEST_UPDATE_TIME: '查询时间',
   REFRESH_CHANGE: '刷新变动',
@@ -1128,7 +1112,20 @@ const FIELD_NAMES = {
   LATEST_EVENT_TIME: '最新动态时间',
   CONTACT_INFO: '快递员信息',
   DELIVERY_TIMELINE: '运送时长',
-  ERROR_MESSAGE: '报错信息'
+  ERROR_MESSAGE: '报错信息',
+  
+  // 国际物流字段
+  INTL_COURIER: '快递公司',
+  INTL_STATUS: '物流状态',
+  INTL_LATEST_STATUS: '最新状态',
+  INTL_SHIPPING_DATE: '发货时间',
+  INTL_DELIVERY_DATE: '签收时间',
+  INTL_ORIGIN: '始发地',
+  INTL_DESTINATION: '目的地',
+  INTL_TRACKING_ROUTE: '物流轨迹',
+  INTL_FIRST_QUERY_TIME: '首次查询时间',
+  INTL_LAST_QUERY_TIME: '最后查询时间',
+  INTL_UPDATE_TIME: '更新时间'
 };
 
 // 初始化函数
@@ -1136,7 +1133,7 @@ const initPluginData = async () => {
   try {
     await getTableFields();
     await getMobileFieldOptions(); // 添加获取手机号码字段
-    await initLoadingChart();
+    await initLoadingChart(); // 初始化水波图
     
     // 获取当前多维表格ID并查询剩余次数
     const selection = await bitable.base.getSelection();
@@ -1151,6 +1148,11 @@ const initPluginData = async () => {
     
     // 恢复已保存的字段
     await restoreMobileField();
+    
+    // 恢复授权码
+    restoreBaseToken();
+    
+    // 不在这里恢复查询类型，而是在onMounted中单独处理
   } catch (error) {
     console.error('初始化失败:', error);
     errorMessage.value = '初始化失败，请刷新页面重试';
@@ -1403,72 +1405,71 @@ watch(async () => {
 
 // 检查并创建必要的字段
 const ensureRequiredFields = async (table) => {
-  const fields = await table.getFieldMetaList();
-  
-  // 检查每个必需字段
-  for (const fieldName of Object.values(FIELD_NAMES)) {
-    const field = fields.find(f => f.name === fieldName);
-    if (!field) {
-      // 如果字段不存在，创建它
-      // 对于特定字段使用特定类型
-      let fieldType = FieldType.Text;
-      let fieldProperty = {};
+  try {
+    const fields = await table.getFieldMetaList();
+    
+    // 根据当前模式选择需要创建的字段
+    if (isInternationalEnabled.value) {
+      // 国际物流需要的字段
+      const requiredFields = [
+        { name: FIELD_NAMES.INTL_COURIER, type: FieldType.SingleSelect, description: '物流服务商名称' },
+        { name: FIELD_NAMES.INTL_STATUS, type: FieldType.SingleSelect, description: '当前物流状态' },
+        { name: FIELD_NAMES.INTL_LATEST_STATUS, type: FieldType.Text, description: '最新物流状态描述' },
+        { name: FIELD_NAMES.INTL_SHIPPING_DATE, type: FieldType.DateTime, description: '包裹发货时间' },
+        { name: FIELD_NAMES.INTL_DELIVERY_DATE, type: FieldType.DateTime, description: '包裹签收时间' },
+        { name: FIELD_NAMES.INTL_ORIGIN, type: FieldType.Text, description: '始发地信息' },
+        { name: FIELD_NAMES.INTL_DESTINATION, type: FieldType.Text, description: '目的地信息' },
+        { name: FIELD_NAMES.INTL_TRACKING_ROUTE, type: FieldType.Text, description: '完整物流轨迹' },
+        { name: FIELD_NAMES.INTL_FIRST_QUERY_TIME, type: FieldType.DateTime, description: '首次查询时间' },
+        { name: FIELD_NAMES.INTL_LAST_QUERY_TIME, type: FieldType.DateTime, description: '最后查询时间' },
+        { name: FIELD_NAMES.INTL_UPDATE_TIME, type: FieldType.DateTime, description: '记录更新时间' },
+        { name: FIELD_NAMES.ERROR_MESSAGE, type: FieldType.Text, description: '查询失败时的错误信息' }
+      ];
       
-      // 单选字段类型
-      if (fieldName === FIELD_NAMES.COURIER || 
-          fieldName === FIELD_NAMES.LATEST_STATUS) {
-        fieldType = FieldType.SingleSelect;
-        
-        // 预设选项
-        if (fieldName === FIELD_NAMES.COURIER) {
-          fieldProperty = {
-            options: [
-              { name: '顺丰速运' },
-              { name: '中通快递' },
-              { name: '圆通速递' },
-              { name: '韵达快递' },
-              { name: '申通快递' },
-              { name: '百世快递' },
-              { name: '邮政快递' },
-              { name: 'EMS' },
-              { name: '京东物流' },
-              { name: '德邦快递' }
-            ]
-          };
-        } else if (fieldName === FIELD_NAMES.LATEST_STATUS) {
-          fieldProperty = {
-            options: [
-              { name: '已签收' },
-              { name: '运输中' },
-              { name: '已揽收' },
-              { name: '派送中' },
-              { name: '已发货' },
-              { name: '待取件' },
-              { name: '已退回' },
-              { name: '疑难件' },
-              { name: '已代签收' }
-            ]
-          };
+      for (const fieldConfig of requiredFields) {
+        if (!fields.find(f => f.name === fieldConfig.name)) {
+          // 只创建字段，不需要保存引用
+          await table.addField({ 
+            type: fieldConfig.type, 
+            name: fieldConfig.name,
+            description: fieldConfig.description
+          });
+          console.log(`创建国际物流字段: ${fieldConfig.name}`);
         }
       }
+    } else {
+      // 国内物流需要的字段
+      const requiredFields = [
+        { name: FIELD_NAMES.LATEST_STATUS, type: FieldType.SingleSelect, description: '当前物流状态' },
+        { name: FIELD_NAMES.LATEST_UPDATE_TIME, type: FieldType.DateTime, description: '查询时间' },
+        { name: FIELD_NAMES.REFRESH_CHANGE, type: FieldType.Text, description: '刷新变动记录' },
+        { name: FIELD_NAMES.ALL_LOGISTICS_INFO, type: FieldType.Text, description: '完整物流信息' },
+        { name: FIELD_NAMES.COURIER, type: FieldType.SingleSelect, description: '快递公司' },
+        { name: FIELD_NAMES.LATEST_EVENT, type: FieldType.Text, description: '最新物流动态' },
+        { name: FIELD_NAMES.LATEST_EVENT_TIME, type: FieldType.DateTime, description: '最新动态时间' },
+        { name: FIELD_NAMES.CONTACT_INFO, type: FieldType.Text, description: '快递员联系信息' },
+        { name: FIELD_NAMES.DELIVERY_TIMELINE, type: FieldType.Text, description: '运送时长' },
+        { name: FIELD_NAMES.ERROR_MESSAGE, type: FieldType.Text, description: '查询失败时的错误信息' },
+      ];
       
-      // 日期时间类型的字段
-      else if (fieldName === FIELD_NAMES.LATEST_EVENT_TIME || 
-          fieldName === FIELD_NAMES.LATEST_UPDATE_TIME) {
-        fieldType = FieldType.DateTime;
+      for (const fieldConfig of requiredFields) {
+        if (!fields.find(f => f.name === fieldConfig.name)) {
+          await table.addField({ 
+            type: fieldConfig.type, 
+            name: fieldConfig.name,
+            description: fieldConfig.description
+          });
+          console.log(`创建国内物流字段: ${fieldConfig.name}`);
+        }
       }
-      
-      await table.addField({
-        type: fieldType,
-        name: fieldName,
-        property: fieldProperty
-      });
-      console.log(`创建字段: ${fieldName}`);
     }
+    
+    // 只返回更新后的字段列表
+    return await table.getFieldMetaList();
+  } catch (error) {
+    console.error('创建必要字段失败:', error);
+    throw error;
   }
-  
-  // 重新获取字段列表
-  return await table.getFieldMetaList();
 };
 
 // 添加水波图相关变量和方法
@@ -1476,61 +1477,116 @@ const loadingChartInstance = ref(null);
 
 // 初始化水波图
 const initLoadingChart = async () => {
-  await nextTick()
-  const chartDom = document.getElementById('loadingChart')
-  if (!chartDom) return
-
-  loadingChartInstance.value = echarts.init(chartDom)
-
-  const option = {
-    backgroundColor: 'transparent',
-    series: [{
-      type: 'liquidFill',
-      data: [0],
-      radius: '80%',
-      amplitude: 20,
-      color: ['#409eff'],
-      backgroundStyle: {
-        color: '#f5f7fa'
-      },
-      outline: {
-        show: false
-      },
-      label: {
-        show: true,
-        fontSize: 28,
-        fontFamily: 'Arial',
-        color: '#409eff',
-        insideColor: '#fff',
-        formatter: () => {
-          return `${Math.round(processedCount.value / totalCount.value * 100)}%`
-        }
+  console.log('初始化水波图...');
+  try {
+    // 等待DOM更新完成
+    await nextTick();
+    
+    // 创建一个水波图容器，如果不存在的话
+    if (!document.getElementById('loadingChart') && isLoading.value) {
+      console.log('创建loadingChart容器...');
+      // 查找加载弹窗容器
+      const loadingContainer = document.querySelector('.fixed.inset-0.bg-black\\/50.backdrop-blur-sm.z-50 .bg-white');
+      if (loadingContainer) {
+        // 清空容器内容并创建新的图表容器
+        loadingContainer.innerHTML = '<div id="loadingChart" class="w-48 h-48"></div><p class="text-sm text-gray-500 mt-4">正在查询中...</p>';
+      } else {
+        console.error('找不到加载弹窗容器');
+        return false;
       }
-    }]
+    }
+    
+    // 获取DOM元素
+    const chartDom = document.getElementById('loadingChart');
+    if (!chartDom) {
+      console.error('找不到loadingChart元素');
+      return false;
+    }
+
+    // 销毁已有实例（如果存在）
+    if (window.myLoadingChart) {
+      window.myLoadingChart.dispose();
+    }
+    
+    // 创建新实例
+    window.myLoadingChart = echarts.init(chartDom);
+    
+    // 设置初始选项
+    const option = {
+      series: [{
+        type: 'liquidFill',
+        radius: '80%',
+        data: [0],
+        color: ['#2B6BFF'],
+        backgroundStyle: {
+          color: '#f5f5f5'
+        },
+        label: {
+          show: true,
+          color: '#2B6BFF',
+          insideColor: '#fff',
+          fontSize: 16,
+          fontWeight: 'bold',
+          formatter: '0%'
+        },
+        outline: {
+          show: true,
+          borderDistance: 4,
+          itemStyle: {
+            color: 'none',
+            borderColor: '#2B6BFF',
+            borderWidth: 2,
+          }
+        }
+      }]
+    };
+    
+    window.myLoadingChart.setOption(option);
+    console.log('水波图初始化成功');
+    return true;
+  } catch (error) {
+    console.error('初始化水波图失败:', error);
+    return false;
   }
+};
 
-  loadingChartInstance.value.setOption(option)
-}
-
-// 更新水波图进度
+// 更新加载水波图进度
 const updateLoadingChart = () => {
-  if (!loadingChartInstance.value) return
-
-  // 确保分母不为0
-  const total = totalCount.value || 1
-  const progress = Math.min(processedCount.value / total, 1)
-
-  loadingChartInstance.value.setOption({
-    series: [{
-      data: [progress],
-      label: {
-        formatter: () => {
-          return `${Math.round(progress * 100)}%`
+  try {
+    // 如果实例不存在，尝试重新初始化
+    if (!window.myLoadingChart) {
+      console.warn('水波图未初始化，尝试重新初始化...');
+      // 延迟100ms再尝试初始化和更新
+      setTimeout(async () => {
+        const initialized = await initLoadingChart();
+        if (initialized) {
+          updateLoadingChart(); // 递归调用自身更新
         }
-      }
-    }]
-  })
-}
+      }, 100);
+      return;
+    }
+    
+    // 计算进度百分比
+    let percent = 0;
+    if (totalCount.value > 0) {
+      percent = Math.min(processedCount.value / totalCount.value, 1);
+    }
+    
+    // 更新水波图
+    window.myLoadingChart.setOption({
+      series: [{
+        data: [percent],
+        label: {
+          formatter: (percent * 100).toFixed(0) + '%'
+        }
+      }]
+    });
+    
+    console.log('水波图更新成功, 进度:', percent);
+  } catch (error) {
+    console.error('更新水波图失败:', error);
+  }
+};
 
 // 在组件卸载时销毁图表实例
 onUnmounted(() => {
@@ -1553,17 +1609,23 @@ const batchQuery = async () => {
 
 // 抽取查询执行逻辑到单独的方法
 const executeBatchQuery = async () => {
+  // 先设置加载状态，以确保弹窗显示
+  isLoading.value = true;
+  
+  // 等待弹窗显示
+  await nextTick();
+  
+  // 初始化水波图
+  await initLoadingChart();
+  
+  // 重置其他状态
+  errorMessage.value = '';
+  successMessage.value = '';
+  hasError.value = false;
+  processedCount.value = 0;
+  totalCount.value = viewRecords.value.length;
+
   try {
-    isLoading.value = true;
-    errorMessage.value = '';
-    successMessage.value = '';
-    hasError.value = false;
-    processedCount.value = 0;
-    totalCount.value = viewRecords.value.length;
-    
-    // 初始化水波图
-    await initLoadingChart();
-    
     // 获取当前多维表格和表格
     const selection = await bitable.base.getSelection();
     const currentTable = await bitable.base.getTableById(selection.tableId);
@@ -1588,12 +1650,9 @@ const executeBatchQuery = async () => {
     let successCount = 0;
     let failCount = 0;
     let errorDetails = [];
+    let recordErrorMessage = '';
 
     for (const record of viewRecords.value) {
-      let trackingNumber = '';
-      let mobileNumber = null;
-      let recordErrorMessage = ''; // 存储当前记录的错误信息
-      
       try {
         // 先清空该记录的错误信息
         if (errorMessageField) {
@@ -1602,20 +1661,25 @@ const executeBatchQuery = async () => {
         
         // 获取快递单号
         const trackingNumberData = await currentTable.getCellValue(selectedField.value.id, record.recordId);
+        let trackingNumber = '';
+        
         if (Array.isArray(trackingNumberData)) {
           trackingNumber = trackingNumberData.map(item => item.text).join('');
         } else if (typeof trackingNumberData === 'string') {
           trackingNumber = trackingNumberData;
         }
         
-        // 获取手机号码
+        // 处理手机号码字段
+        let mobileNumber = null;
         if (selectedMobileField.value) {
           const mobileData = await currentTable.getCellValue(selectedMobileField.value.id, record.recordId);
           let mobileStr = '';
           
           if (Array.isArray(mobileData)) {
-            mobileStr = mobileData.map(item => item.text || item).join('');
-          } else if (mobileData !== null && mobileData !== undefined) {
+            mobileStr = mobileData.map(item => item.text).join('');
+          } else if (typeof mobileData === 'object' && mobileData !== null) {
+            mobileStr = mobileData.text || '';
+          } else {
             mobileStr = String(mobileData);
           }
           
@@ -1719,9 +1783,13 @@ const executeBatchQuery = async () => {
 // 修改 clearCache 方法，清除所有消息和新状态
 const clearCache = () => {
   localStorage.removeItem(STORAGE_KEY.FIELD_ID);
-  localStorage.removeItem('MOBILE_FIELD_ID');
+  localStorage.removeItem(STORAGE_KEY.MOBILE_FIELD_ID);
+  localStorage.removeItem(STORAGE_KEY.BASE_TOKEN);
+  localStorage.removeItem(STORAGE_KEY.QUERY_TYPE);
   selectedField.value = null;
   selectedMobileField.value = null;
+  baseToken.value = '';
+  isInternationalEnabled.value = false;
   viewRecords.value = [];
   processedCount.value = 0;
   totalCount.value = 0;
@@ -1736,6 +1804,9 @@ const clearCache = () => {
 
 // 初始化
 onMounted(async () => {
+  // 先恢复查询类型
+  restoreQueryType();
+  // 然后初始化其他数据
   await initPluginData();
 });
 
@@ -2189,15 +2260,15 @@ const selectMobileField = (field) => {
   
   // 存储字段ID到本地存储
   if (field) {
-    localStorage.setItem('MOBILE_FIELD_ID', field.id);
+    localStorage.setItem(STORAGE_KEY.MOBILE_FIELD_ID, field.id);
   } else {
-    localStorage.removeItem('MOBILE_FIELD_ID');
+    localStorage.removeItem(STORAGE_KEY.MOBILE_FIELD_ID);
   }
 };
 
 // 从本地存储恢复手机号码字段
 const restoreMobileField = async () => {
-  const savedMobileFieldId = localStorage.getItem('MOBILE_FIELD_ID');
+  const savedMobileFieldId = localStorage.getItem(STORAGE_KEY.MOBILE_FIELD_ID);
   if (savedMobileFieldId && mobileFieldOptions.value.length > 0) {
     const savedField = mobileFieldOptions.value.find(field => field.id === savedMobileFieldId);
     if (savedField) {
@@ -2301,21 +2372,23 @@ const handleRecordsSelected = ({ records, mode }) => {
     confirmDialogCallback.value = (confirmed) => {
       showChineseConfirmDialog.value = false;
       if (confirmed) {
-        // 用户确认继续，执行查询逻辑
-        executeBatchQuery();
+        // 用户确认继续，根据当前模式执行对应的查询逻辑
+        if (isInternationalEnabled.value) {
+          executeInternationalBatchQuery();
+        } else {
+          executeBatchQuery();
+        }
       }
     };
   } else {
-    // 没有中文字符，直接执行查询
-    executeBatchQuery();
+    // 没有中文字符，根据当前模式直接执行查询
+    if (isInternationalEnabled.value) {
+      executeInternationalBatchQuery();
+    } else {
+      executeBatchQuery();
+    }
   }
 };
-
-// 国际查询相关状态
-const isInternationalEnabled = ref(false);
-const baseToken = ref('');
-const baseTokenError = ref('');
-const showBaseTokenHelp = ref(false);
 
 // 国际查询
 const batchQueryInternational = async () => {
@@ -2324,7 +2397,22 @@ const batchQueryInternational = async () => {
     return;
   }
 
+  // 显示记录选择器弹窗
+  showRecordSelector.value = true;
+};
+
+// 执行批量国际查询
+const executeInternationalBatchQuery = async () => {
+  // 先设置加载状态，以确保弹窗显示
   isLoading.value = true;
+  
+  // 等待弹窗显示
+  await nextTick();
+  
+  // 初始化水波图
+  await initLoadingChart();
+  
+  // 重置其他状态
   errorMessage.value = '';
   successMessage.value = '';
   hasError.value = false;
@@ -2338,20 +2426,12 @@ const batchQueryInternational = async () => {
     const baseId = selection.baseId;
     const tableId = selection.tableId;
 
-    // 确保所需字段存在
+    // 确保所需字段存在 - 仅创建字段不返回字段ID
     console.log('检查并创建必要字段...');
-    const fields = await ensureRequiredFields(currentTable);
+    await ensureRequiredFields(currentTable);
     
-    // 获取字段ID
-    const statusField = fields.find(f => f.name === FIELD_NAMES.LATEST_STATUS);
-    const updateTimeField = fields.find(f => f.name === FIELD_NAMES.LATEST_UPDATE_TIME);
-    const refreshChangeField = fields.find(f => f.name === FIELD_NAMES.REFRESH_CHANGE);
-    const allLogisticsInfoField = fields.find(f => f.name === FIELD_NAMES.ALL_LOGISTICS_INFO);
-    const courierField = fields.find(f => f.name === FIELD_NAMES.COURIER);
-    const latestEventField = fields.find(f => f.name === FIELD_NAMES.LATEST_EVENT);
-    const latestEventTimeField = fields.find(f => f.name === FIELD_NAMES.LATEST_EVENT_TIME);
-    const contactInfoField = fields.find(f => f.name === FIELD_NAMES.CONTACT_INFO);
-    const deliveryTimelineField = fields.find(f => f.name === FIELD_NAMES.DELIVERY_TIMELINE);
+    // 获取错误信息字段 - 这是唯一需要前端写入的字段
+    const fields = await currentTable.getFieldMetaList();
     const errorMessageField = fields.find(f => f.name === FIELD_NAMES.ERROR_MESSAGE);
 
     let successCount = 0;
@@ -2374,11 +2454,7 @@ const batchQueryInternational = async () => {
           trackingNumber = trackingNumberData;
         }
         
-        // 查询之前的状态
-        const prevStatus = await currentTable.getCellValue(statusField.id, record.recordId);
-        const prevUpdateTime = await currentTable.getCellValue(updateTimeField.id, record.recordId);
-        
-        // 使用国际查询
+        // 使用国际查询 - 所有数据处理由服务端完成
         const logisticsData = await queryInternationalExpressInfo(
           trackingNumber, 
           baseId, 
@@ -2388,23 +2464,7 @@ const batchQueryInternational = async () => {
         );
         
         if (logisticsData.success) {
-          await updateRecordInfo({
-            currentTable,
-            record,
-            statusField,
-            updateTimeField,
-            refreshChangeField,
-            allLogisticsInfoField,
-            logisticsData,
-            prevStatus,
-            prevUpdateTime,
-            courierField,
-            latestEventField,
-            latestEventTimeField,
-            contactInfoField,
-            deliveryTimelineField,
-            errorMessageField
-          });
+          // 成功查询，数据由服务端直接写入
           successCount++;
           
           // 更新剩余额度
@@ -2434,9 +2494,12 @@ const batchQueryInternational = async () => {
       } catch (err) {
         failCount++;
         const errorMsg = err.message || '未知错误';
+        const recordErrorMessage = errorMsg;
+        
+        // 记录错误详情
         errorDetails.push(`处理失败: ${errorMsg}`);
         
-        // 将错误信息写入到报错信息字段（如果可能）
+        // 将错误信息写入到报错信息字段
         try {
           if (errorMessageField && record.recordId) {
             await currentTable.setCellValue(errorMessageField.id, record.recordId, errorMsg);
@@ -2468,7 +2531,41 @@ const batchQueryInternational = async () => {
 // 切换国际查询功能状态
 const toggleInternationalEnabled = () => {
   isInternationalEnabled.value = !isInternationalEnabled.value;
+  const queryType = isInternationalEnabled.value ? 'international' : 'domestic';
+  console.log('保存查询类型:', queryType);
+  // 保存查询类型到本地存储
+  localStorage.setItem(STORAGE_KEY.QUERY_TYPE, queryType);
 };
+
+// 恢复授权码
+const restoreBaseToken = () => {
+  const savedBaseToken = localStorage.getItem(STORAGE_KEY.BASE_TOKEN);
+  if (savedBaseToken) {
+    baseToken.value = savedBaseToken;
+  }
+};
+
+// 恢复查询类型
+const restoreQueryType = () => {
+  const savedQueryType = localStorage.getItem(STORAGE_KEY.QUERY_TYPE);
+  console.log('恢复查询类型:', savedQueryType);
+  if (savedQueryType === 'international') {
+    isInternationalEnabled.value = true;
+    console.log('设置为国际查询模式');
+  } else {
+    isInternationalEnabled.value = false;
+    console.log('设置为国内查询模式');
+  }
+};
+
+// 监听授权码变化并保存到本地存储
+watch(baseToken, (newValue) => {
+  if (newValue) {
+    localStorage.setItem(STORAGE_KEY.BASE_TOKEN, newValue);
+  } else {
+    localStorage.removeItem(STORAGE_KEY.BASE_TOKEN);
+  }
+});
 </script>
 
 <style>
