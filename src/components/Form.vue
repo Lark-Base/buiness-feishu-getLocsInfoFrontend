@@ -809,49 +809,56 @@
             <div v-else class="grid grid-cols-2 gap-3">
               <div v-for="pkg in internationalPackages" 
                    :key="pkg.id"
-                   class="p-3 !rounded-xl border border-gray-100 bg-gray-50/80 relative group cursor-not-allowed">
+                   :class="[
+                     'p-3 !rounded-xl border transition-all cursor-pointer relative group',
+                     pkg.popular 
+                       ? 'bg-gradient-to-r from-indigo-600/5 to-indigo-50 border-indigo-600/20 hover:shadow-md hover:border-indigo-600/30' 
+                       : 'bg-white border-gray-100 hover:shadow hover:border-indigo-600/10'
+                   ]"
+                   @click="handlePayment(pkg.id)">
                 <!-- 标签 -->
                 <div v-if="pkg.tag" 
-                     class="absolute -top-2 right-3 px-2 py-0.5 text-xs font-medium !rounded-full shadow-sm bg-gray-200 text-gray-600">
+                     :class="[
+                       'absolute -top-2 right-3 px-2 py-0.5 text-xs font-medium !rounded-full shadow-sm',
+                       pkg.popular 
+                         ? 'bg-indigo-600 text-white' 
+                         : 'bg-indigo-600/10 text-indigo-600'
+                     ]">
                   {{ pkg.tag }}
                 </div>
                 
                 <!-- 套餐内容 -->
                 <div class="flex items-center justify-between mb-2">
                   <div class="flex items-center gap-2">
-                    <div class="w-7 h-7 shrink-0 rounded-lg flex items-center justify-center bg-gray-100">
-                      <i class="fas fa-box text-gray-400 text-[10px]"></i>
+                    <div :class="[
+                      'w-7 h-7 shrink-0 rounded-lg flex items-center justify-center',
+                      pkg.popular ? 'bg-indigo-600/10' : 'bg-gray-50'
+                    ]">
+                      <i class="fas fa-box text-indigo-600 text-[10px]"></i>
                     </div>
                     <div class="min-w-0 flex-1">
-                      <span class="font-medium text-xs line-clamp-1 text-gray-400">{{ pkg.name }}</span>
-                      <p class="text-xs text-gray-400 mt-0.5 line-clamp-1">{{ pkg.description }}</p>
+                      <span class="font-medium text-xs line-clamp-1">{{ pkg.name }}</span>
+                      <p class="text-xs text-gray-500 mt-0.5 line-clamp-1">{{ pkg.description }}</p>
                     </div>
                   </div>
                   <div class="text-right flex flex-col items-end ml-1">
                     <div class="flex items-baseline gap-0.5">
-                      <span class="text-xs text-gray-400">¥</span>
-                      <span class="text-sm font-medium text-gray-400">{{ pkg.price }}</span>
+                      <span class="text-xs text-gray-500">¥</span>
+                      <span class="text-sm font-medium text-indigo-600">{{ pkg.price }}</span>
                     </div>
-                    <p class="text-xs text-gray-400 whitespace-nowrap">{{ formatNumber(pkg.quota) }}次</p>
+                    <p class="text-xs text-gray-500 whitespace-nowrap">{{ formatNumber(pkg.quota) }}次</p>
                   </div>
                 </div>
                 
                 <!-- 价格对比 -->
                 <div class="flex items-center justify-between text-xs">
-                  <div class="flex items-center gap-1 text-gray-400 truncate">
+                  <div class="flex items-center gap-1 text-gray-500 truncate">
                     <i class="fas fa-calculator text-[10px]"></i>
                     <span class="text-[10px]">约{{ formatUnitPrice(pkg.price, pkg.quota) }}元/千次</span>
                   </div>
-                  <div class="text-gray-400">
+                  <div class="text-indigo-600 group-hover:translate-x-1 transition-transform duration-300">
                     <i class="fas fa-chevron-right text-[10px]"></i>
                   </div>
-                </div>
-
-                <!-- 禁用遮罩 -->
-                <div class="absolute inset-0 bg-gray-100/50 !rounded-xl flex items-center justify-center">
-                  <span class="text-xs text-gray-500 bg-white/80 px-2 py-1 !rounded-full border border-gray-200">
-                    即将上线
-                  </span>
                 </div>
               </div>
             </div>
