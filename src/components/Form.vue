@@ -203,7 +203,7 @@
                       </div>
                        
                       <!-- 余额不足提示 -->
-                      <div v-if="domesticQuota < 100" 
+                      <div v-if="Math.min((domesticQuota / domesticPurchased) * 100, 100) <= 10" 
                            class="mb-2 flex items-center gap-1.5 text-xs text-red-500 bg-red-50/70 px-2 py-1 !rounded-lg border border-red-100/50">
                         <i class="fas fa-exclamation-circle text-[10px]"></i>
                         <span>余额不足，请及时充值</span>
@@ -292,7 +292,7 @@
                       </div>
                        
                       <!-- 余额不足提示 -->
-                      <div v-if="internationalQuota < 100" 
+                      <div v-if="Math.min((internationalQuota / internationalPurchased) * 100, 100) <= 10" 
                            class="mb-2 flex items-center gap-1.5 text-xs text-red-500 bg-red-50/70 px-2 py-1 !rounded-lg border border-red-100/50">
                         <i class="fas fa-exclamation-circle text-[10px]"></i>
                         <span>余额不足，请及时充值</span>
@@ -1660,6 +1660,8 @@ const executeBatchQuery = async () => {
     let recordErrorMessage = '';
 
     for (const record of viewRecords.value) {
+      let trackingNumber = ''
+      let errorMsg = ""
       try {
         // 先清空该记录的错误信息
         if (errorMessageField) {
@@ -1668,13 +1670,14 @@ const executeBatchQuery = async () => {
         
         // 获取快递单号
         const trackingNumberData = await currentTable.getCellValue(selectedField.value.id, record.recordId);
-        let trackingNumber = '';
+        
         
         if (Array.isArray(trackingNumberData)) {
           trackingNumber = trackingNumberData.map(item => item.text).join('');
         } else if (typeof trackingNumberData === 'string') {
           trackingNumber = trackingNumberData;
         }
+        if (trackingNumber == "") continue
         
         // 处理手机号码字段
         let mobileNumber = null;
@@ -1731,10 +1734,17 @@ const executeBatchQuery = async () => {
             domesticQuota.value = logisticsData.remaining; // 更新国内额度
             domesticPurchased.value = logisticsData.purchased; // 更新已购买额度
           }
-        } else {
+        } 
+        else {
           failCount++;
+          console.log("logisticsData", logisticsData)
           // 从响应中获取错误信息
-          let errorMsg = logisticsData.message || '未知错误';
+          errorMsg = logisticsData.message || '未知错误';
+          
+          // 替换特定的错误信息
+          if (errorMsg.includes("没有找到可用的国内授权码") || errorMsg.includes("没有找到可用的国际授权码")) {
+            errorMsg = "余额不足，无法查询，请及时充值";
+          }
           
           // 优化针对特定情况的错误信息
           if (errorMsg.includes("物流状态未知")) {
@@ -1755,10 +1765,12 @@ const executeBatchQuery = async () => {
 
         processedCount.value++;
         updateLoadingChart();
+        if (errorMsg == "余额不足，无法查询，请及时充值")
+          break
         
       } catch (err) {
         failCount++;
-        const errorMsg = err.message || '未知错误';
+        errorMsg = err.message || '未知错误';
         recordErrorMessage = errorMsg;
         errorDetails.push(`快递单号 ${trackingNumber || '未知'} 处理失败: ${recordErrorMessage}`);
         
@@ -1865,12 +1877,15 @@ const openDocumentation = () => {
 const getRemainingQuota = async (baseId) => {
   try {
     const response = await queryRemainingQuota(baseId);
+    console.log("response.data", response.data)
     if (response.success) {
       remainingQuota.value = response.data.remaining_quota;
       domesticQuota.value = response.data.domestic_quota;
       internationalQuota.value = response.data.international_quota;
       domesticPurchased.value = response.data.domestic_purchased;
       internationalPurchased.value = response.data.international_purchased;
+      console.log("domesticPurchased.value", domesticPurchased.value)
+      console.log("domesticQuota.value", domesticQuota.value)
     }
   } catch (error) {
     console.error('获取剩余次数失败:', error);
@@ -2485,6 +2500,12 @@ const executeInternationalBatchQuery = async () => {
           failCount++;
           // 从响应中获取错误信息
           let errorMsg = logisticsData.message || '未知错误';
+          
+          // 替换特定的错误信息
+          if (errorMsg.includes("没有找到可用的国际授权码")) {
+            errorMsg = "余额不足，无法查询，请及时充值";
+          }
+          
           const recordErrorMessage = errorMsg;
           
           errorDetails.push(`快递单号 ${trackingNumber} 查询失败: ${recordErrorMessage}`);

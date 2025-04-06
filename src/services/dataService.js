@@ -51,9 +51,16 @@ export const queryExpressInfo = async (trackingNumber, baseId, mobile = null) =>
     // 响应格式可能有多种，需要适配
     if (!response.data.success) {
       // API明确表示查询失败
+      let errorMessage = response.data.error || "查询失败";
+      
+      // 替换特定错误消息
+      if (errorMessage.includes("没有找到可用的国内授权码")) {
+        errorMessage = "余额不足，无法查询，请及时充值";
+      }
+      
       return {
         success: false,
-        message: response.data.error || "查询失败",
+        message: errorMessage,
         remaining: response.data.remaining
       };
     }
@@ -130,12 +137,34 @@ export const queryExpressInfo = async (trackingNumber, baseId, mobile = null) =>
     };
   } catch (error) {
     console.error('查询快递信息失败:', error);
-    if (error.code === 'ERR_NETWORK') {
-      throw new Error('网络连接失败，请检查网络设置或联系管理员');
-    } else if (error.code === 'ERR_SSL_PROTOCOL_ERROR') {
-      throw new Error('SSL证书验证失败，请联系管理员');
+    
+    // 从错误对象中正确提取错误信息
+    let errorMessage = '未知错误';
+    let remaining = undefined;
+    
+    if (error.response) {
+      // 请求已发出，服务器以状态码进行响应
+      errorMessage = error.response.data?.message || error.response.data?.error || '服务器返回错误';
+      remaining = error.response.data?.remaining;
+      console.log('服务器响应错误:', error.response.status, error.response.data);
+      
+      // 替换特定错误消息
+      if (errorMessage.includes("没有找到可用的国内授权码")) {
+        errorMessage = "余额不足，无法查询，请及时充值";
+      }
+    } else if (error.request) {
+      // 请求已发出，但没有收到响应
+      errorMessage = '请求未得到响应，请检查网络连接';
+    } else {
+      // 请求设置触发错误
+      errorMessage = error.message || '请求配置错误';
     }
-    throw error;
+    
+    return {
+      success: false,
+      message: errorMessage,
+      remaining: remaining
+    };
   }
 };
 
@@ -592,12 +621,41 @@ export const queryRemainingQuota = async (baseId) => {
         remaining_quota: response.data.data.remaining_quota,
         domestic_quota: response.data.data.domestic_quota,
         international_quota: response.data.data.international_quota,
+        domestic_purchased: response.data.data.domestic_purchased,
+        international_purchased: response.data.data.international_purchased,
         base_id: response.data.data.base_id
       }
     };
   } catch (error) {
     console.error('查询剩余次数失败:', error);
-    throw error;
+    
+    // 从错误对象中正确提取错误信息
+    let errorMessage = '未知错误';
+    
+    if (error.response) {
+      // 请求已发出，服务器以状态码进行响应
+      errorMessage = error.response.data?.message || error.response.data?.error || '服务器返回错误';
+      console.log('服务器响应错误:', error.response.status, error.response.data);
+    } else if (error.request) {
+      // 请求已发出，但没有收到响应
+      errorMessage = '请求未得到响应，请检查网络连接';
+    } else {
+      // 请求设置触发错误
+      errorMessage = error.message || '请求配置错误';
+    }
+    
+    return {
+      success: false,
+      message: errorMessage,
+      data: {
+        remaining_quota: 0,
+        domestic_quota: 0,
+        international_quota: 0,
+        domestic_purchased: 0,
+        international_purchased: 0,
+        base_id: baseId
+      }
+    };
   }
 };
 
@@ -612,7 +670,27 @@ export const getPackages = async () => {
     return response.data;
   } catch (error) {
     console.error('获取套餐列表失败:', error);
-    throw error;
+    
+    // 从错误对象中正确提取错误信息
+    let errorMessage = '未知错误';
+    
+    if (error.response) {
+      // 请求已发出，服务器以状态码进行响应
+      errorMessage = error.response.data?.message || error.response.data?.error || '服务器返回错误';
+      console.log('服务器响应错误:', error.response.status, error.response.data);
+    } else if (error.request) {
+      // 请求已发出，但没有收到响应
+      errorMessage = '请求未得到响应，请检查网络连接';
+    } else {
+      // 请求设置触发错误
+      errorMessage = error.message || '请求配置错误';
+    }
+    
+    return {
+      success: false,
+      message: errorMessage,
+      data: []
+    };
   }
 };
 
@@ -704,9 +782,16 @@ export const queryInternationalExpressInfo = async (trackingNumber, baseId, base
 
     // 如果API明确表示查询失败
     if (!response.data.success) {
+      let errorMessage = response.data.error || "查询失败";
+      
+      // 替换特定错误消息
+      if (errorMessage.includes("没有找到可用的国际授权码")) {
+        errorMessage = "余额不足，无法查询，请及时充值";
+      }
+      
       return {
         success: false,
-        message: response.data.error || "查询失败",
+        message: errorMessage,
         remaining: response.data.remaining
       };
     }
@@ -757,11 +842,33 @@ export const queryInternationalExpressInfo = async (trackingNumber, baseId, base
     };
   } catch (error) {
     console.error('查询国际快递信息失败:', error);
-    if (error.code === 'ERR_NETWORK') {
-      throw new Error('网络连接失败，请检查网络设置或联系管理员');
-    } else if (error.code === 'ERR_SSL_PROTOCOL_ERROR') {
-      throw new Error('SSL证书验证失败，请联系管理员');
+    
+    // 从错误对象中正确提取错误信息
+    let errorMessage = '未知错误';
+    let remaining = undefined;
+    
+    if (error.response) {
+      // 请求已发出，服务器以状态码进行响应
+      errorMessage = error.response.data?.message || error.response.data?.error || '服务器返回错误';
+      remaining = error.response.data?.remaining;
+      console.log('服务器响应错误:', error.response.status, error.response.data);
+      
+      // 替换特定错误消息
+      if (errorMessage.includes("没有找到可用的国际授权码")) {
+        errorMessage = "余额不足，无法查询，请及时充值";
+      }
+    } else if (error.request) {
+      // 请求已发出，但没有收到响应
+      errorMessage = '请求未得到响应，请检查网络连接';
+    } else {
+      // 请求设置触发错误
+      errorMessage = error.message || '请求配置错误';
     }
-    throw error;
+    
+    return {
+      success: false,
+      message: errorMessage,
+      remaining: remaining
+    };
   }
 };
